@@ -1,8 +1,78 @@
-import heroImg from "@/assets/novu-hero.webp";
-/* NOVU — Casa de Vó Editorial: hero emocional, avó e neta costurando juntas,
-   manchete afetiva com itálico Fraunces, linha de alinhavo animada. */
+/* NOVU — Casa de Vó Editorial: hero emocional com o filme "Eu, o Vestido" em
+   destaque, manchete afetiva com itálico Fraunces, linha de alinhavo animada. */
 import { useEffect, useRef, useState } from "react";
 import { Reveal, SwingTag } from "./primitives";
+
+const HERO_VIDEO_SRC = "/manus-storage/novu_hero_video_16x9_a7f5c97a.mp4";
+
+function HeroVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+
+  const toggleSound = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (muted) {
+      v.muted = false;
+      v.currentTime = 0;
+      v.play();
+      setMuted(false);
+    } else {
+      v.muted = true;
+      setMuted(true);
+    }
+  };
+
+  return (
+    <div className="relative rounded-[4px] overflow-hidden shadow-[0_20px_50px_-20px_rgba(40,50,30,0.4)] rotate-[1.2deg] bg-[#1d1a14]">
+      <video
+        ref={videoRef}
+        src={HERO_VIDEO_SRC}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-label='Filme "Eu, o Vestido" — a história de um vestido contada por ele mesmo, da primeira dona ao reparo pelas mãos de uma costureira NOVU'
+        className="w-full h-[340px] sm:h-[420px] object-cover"
+      />
+      {/* Vinheta sutil para integrar o vídeo ao papel do site */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          boxShadow: "inset 0 0 60px rgba(40, 35, 20, 0.35)",
+        }}
+        aria-hidden
+      />
+      <button
+        type="button"
+        onClick={toggleSound}
+        className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-2 bg-[rgba(28,24,16,0.72)] backdrop-blur-sm text-[#f3ecdd] text-xs font-semibold tracking-wide px-3.5 py-2 rounded-full border border-[rgba(243,236,221,0.25)] transition-all duration-150 hover:bg-[rgba(28,24,16,0.9)] active:scale-[0.96]"
+        aria-pressed={!muted}
+      >
+        {muted ? (
+          <>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+            Assistir com som
+          </>
+        ) : (
+          <>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </svg>
+            Silenciar
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
 
 function StitchPath() {
   const ref = useRef<SVGPathElement>(null);
@@ -80,15 +150,9 @@ export function Hero() {
         </div>
         <div className="lg:col-span-5 relative">
           <Reveal delay={200} className="relative">
-            <div className="relative rounded-[4px] overflow-hidden shadow-[0_20px_50px_-20px_rgba(40,50,30,0.4)] rotate-[1.2deg]">
-              <img
-                src={heroImg}
-                alt="Avó ensinando a neta a costurar em uma mesa de madeira, com caixa de costura vintage"
-                className="w-full h-[340px] sm:h-[420px] object-cover"
-              />
-            </div>
+            <HeroVideo />
             <div className="absolute -bottom-8 -left-6 sm:-left-10 z-10">
-              <SwingTag value="De mãe para filha" label="e de pai para filho" accent />
+              <SwingTag value='"Eu, o Vestido"' label="uma história contada pela própria roupa" accent />
             </div>
           </Reveal>
         </div>
@@ -97,4 +161,3 @@ export function Hero() {
     </section>
   );
 }
-
