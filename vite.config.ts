@@ -1,10 +1,8 @@
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -77,6 +75,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
 function vitePluginManusDebugCollector(): Plugin {
   return {
     name: "manus-debug-collector",
+    apply: "serve",
 
     transformIndexHtml(html) {
       if (process.env.NODE_ENV === "production") {
@@ -203,10 +202,33 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+// Manus-specific plugins are loaded dynamically so the project builds anywhere
+// (Vercel, Netlify, readdy.ai, etc.) even when these packages are absent.
+async function loadOptionalManusPlugins(): Promise<Plugin[]> {
+  const optional: Plugin[] = [];
+  try {
+    const { jsxLocPlugin } = await import("@builder.io/vite-plugin-jsx-loc");
+    optional.push(jsxLocPlugin() as Plugin);
+  } catch {
+    /* not installed — skip */
+  }
+  try {
+    const { vitePluginManusRuntime } = await import("vite-plugin-manus-runtime");
+    optional.push(vitePluginManusRuntime() as Plugin);
+  } catch {
+    /* not installed — skip */
+  }
+  return optional;
+}
 
-export default defineConfig({
-  plugins,
+export default defineConfig(async () => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(await loadOptionalManusPlugins()),
+    vitePluginManusDebugCollector(),
+    vitePluginStorageProxy(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -238,4 +260,4 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-});
+}));

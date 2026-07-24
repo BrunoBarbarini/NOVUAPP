@@ -1,3 +1,4 @@
+import memoriaImg from "@/assets/novu-memoria.webp";
 /* NOVU — Casa de Vó Editorial: manifesto emocional, foto-memória estilo álbum,
    carta sobre roupas que guardam histórias e passam entre gerações. */
 import { ChapterHeader, Reveal } from "./primitives";
@@ -25,7 +26,7 @@ export function Manifesto() {
           <div className="relative">
             <div className="rounded-[4px] overflow-hidden -rotate-[1.5deg] shadow-[0_18px_44px_-18px_rgba(40,50,30,0.4)]">
               <img
-                src="/manus-storage/novu-memoria_01cb24bc.png"
+                src={memoriaImg}
                 alt="Jaqueta jeans querida ao lado de fotografia antiga de família, flores secas e linha verde"
                 className="w-full h-[380px] sm:h-[460px] object-cover"
               />

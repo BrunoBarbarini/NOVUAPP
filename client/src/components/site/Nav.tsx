@@ -1,3 +1,4 @@
+import logoImg from "@/assets/novu-logo.webp";
 /* NOVU — Casa de Vó Editorial: nav fina, wordmark Fraunces, CTA duplo afetivo */
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ export function Nav() {
       <div className="container flex items-center justify-between h-16">
         <a href="#" className="flex items-center gap-2.5" aria-label="NOVU — início">
           <img
-            src="/manus-storage/novu-logo_7804c5bb.png"
+            src={logoImg}
             alt=""
             className="h-9 w-9 object-contain"
           />

@@ -1,3 +1,4 @@
+import costureiraImg from "@/assets/novu-costureira.webp";
 /* NOVU — Casa de Vó Editorial: convite às costureiras — dignidade, renda justa,
    comunidade e fila organizada de clientes. */
 import { ChapterHeader, Reveal } from "./primitives";
@@ -30,7 +31,7 @@ export function ForSeamstresses() {
           <div className="relative">
             <div className="rounded-[4px] overflow-hidden rotate-[1.2deg] shadow-[0_18px_44px_-18px_rgba(40,50,30,0.4)]">
               <img
-                src="/manus-storage/novu-costureira_625596f7.png"
+                src={costureiraImg}
                 alt="Costureira sorridente em seu ateliê doméstico, diante da máquina de costura perto da janela"
                 className="w-full h-[380px] sm:h-[460px] object-cover"
               />

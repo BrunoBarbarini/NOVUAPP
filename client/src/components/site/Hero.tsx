@@ -1,3 +1,4 @@
+import heroImg from "@/assets/novu-hero.webp";
 /* NOVU — Casa de Vó Editorial: hero emocional, avó e neta costurando juntas,
    manchete afetiva com itálico Fraunces, linha de alinhavo animada. */
 import { useEffect, useRef, useState } from "react";
@@ -81,7 +82,7 @@ export function Hero() {
           <Reveal delay={200} className="relative">
             <div className="relative rounded-[4px] overflow-hidden shadow-[0_20px_50px_-20px_rgba(40,50,30,0.4)] rotate-[1.2deg]">
               <img
-                src="/manus-storage/novu-hero_21285fa9.png"
+                src={heroImg}
                 alt="Avó ensinando a neta a costurar em uma mesa de madeira, com caixa de costura vintage"
                 className="w-full h-[340px] sm:h-[420px] object-cover"
               />

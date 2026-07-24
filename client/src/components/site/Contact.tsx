@@ -1,3 +1,4 @@
+import logoImg from "@/assets/novu-logo.webp";
 /* NOVU — Casa de Vó Editorial: convite final duplo (cliente + costureira) e
    footer costurado com aviso de piloto. */
 import { Reveal } from "./primitives";
@@ -49,7 +50,7 @@ export function Contact() {
       <footer className="bg-ink text-[oklch(0.68_0.01_85)] border-t border-white/10">
         <div className="container py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <img src="/manus-storage/novu-logo_7804c5bb.png" alt="" className="h-7 w-7 object-contain brightness-[1.6]" />
+            <img src={logoImg} alt="" className="h-7 w-7 object-contain brightness-[1.6]" />
             <span className="font-display text-lg font-semibold text-[oklch(0.9_0.01_85)]">novu</span>
           </div>
           <p className="text-xs leading-relaxed max-w-md">

@@ -1,3 +1,4 @@
+import escolaImg from "@/assets/novu-escola.webp";
 /* NOVU — Casa de Vó Editorial: Escola NOVU — formação de novas gerações
    de costureiras, mestras e aprendizes, saber que passa adiante. */
 import { ChapterHeader, Reveal } from "./primitives";
@@ -56,7 +57,7 @@ export function School() {
           <Reveal delay={120} className="lg:col-span-5 order-1 lg:order-2">
             <div className="rounded-[4px] overflow-hidden -rotate-[1.2deg] shadow-[0_18px_44px_-18px_rgba(40,50,30,0.4)]">
               <img
-                src="/manus-storage/novu-escola_b8b9cfd0.png"
+                src={escolaImg}
                 alt="Oficina de costura intergeracional: mestra ensinando jovem aprendiz em ateliê iluminado"
                 className="w-full h-[360px] sm:h-[440px] object-cover"
               />
