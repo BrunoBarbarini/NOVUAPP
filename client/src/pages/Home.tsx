@@ -1,16 +1,16 @@
 /*
- * ALINHAVO — Ateliê Editorial
- * One-page pitch para investidores e parceiros: hero → oportunidade →
- * validação SOJO → modelo → números → roadmap → impacto → convite.
+ * NOVU — Casa de Vó Editorial
+ * One-page para cliente final e costureiras: hero afetivo → manifesto →
+ * como funciona → a causa → para costureiras → escola → planeta → convite.
  */
 import { Nav } from "@/components/site/Nav";
 import { Hero } from "@/components/site/Hero";
-import { Opportunity } from "@/components/site/Opportunity";
-import { Validation } from "@/components/site/Validation";
-import { Model } from "@/components/site/Model";
-import { Financials } from "@/components/site/Financials";
-import { Roadmap } from "@/components/site/Roadmap";
-import { Impact } from "@/components/site/Impact";
+import { Manifesto } from "@/components/site/Manifesto";
+import { HowItWorks } from "@/components/site/HowItWorks";
+import { Cause } from "@/components/site/Cause";
+import { ForSeamstresses } from "@/components/site/ForSeamstresses";
+import { School } from "@/components/site/School";
+import { Sustainability } from "@/components/site/Sustainability";
 import { Contact } from "@/components/site/Contact";
 import { BasteDivider } from "@/components/site/primitives";
 
@@ -21,14 +21,15 @@ export default function Home() {
       <main>
         <Hero />
         <BasteDivider />
-        <Opportunity />
-        <Validation />
-        <Model />
-        <Financials />
-        <Roadmap />
-        <Impact />
+        <Manifesto />
+        <HowItWorks />
+        <Cause />
+        <ForSeamstresses />
+        <School />
+        <Sustainability />
         <Contact />
       </main>
     </div>
   );
 }
+

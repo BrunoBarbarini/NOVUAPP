@@ -1,13 +1,13 @@
-/* ALINHAVO — Ateliê Editorial: nav fina, wordmark Fraunces, CTA laranja-linha */
+/* NOVU — Casa de Vó Editorial: nav fina, wordmark Fraunces, CTA duplo afetivo */
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "#oportunidade", label: "A oportunidade" },
-  { href: "#validacao", label: "O caso SOJO" },
-  { href: "#modelo", label: "O modelo" },
-  { href: "#financeiro", label: "Números" },
-  { href: "#roadmap", label: "Roadmap" },
+  { href: "#manifesto", label: "Nosso manifesto" },
+  { href: "#como-funciona", label: "Como funciona" },
+  { href: "#a-causa", label: "A causa" },
+  { href: "#costureiras", label: "Para costureiras" },
+  { href: "#escola", label: "Escola NOVU" },
 ];
 
 export function Nav() {
@@ -28,17 +28,17 @@ export function Nav() {
       )}
     >
       <div className="container flex items-center justify-between h-16">
-        <a href="#" className="flex items-center gap-2.5" aria-label="Alinhavo — início">
+        <a href="#" className="flex items-center gap-2.5" aria-label="NOVU — início">
           <img
-            src="/manus-storage/alinhavo-logo_367ede4a.png"
+            src="/manus-storage/novu-logo_7804c5bb.png"
             alt=""
             className="h-9 w-9 object-contain"
           />
-          <span className="font-display text-[1.45rem] font-semibold tracking-tight text-foreground">
-            alinhavo
+          <span className="font-display text-[1.5rem] font-semibold tracking-tight text-foreground">
+            novu
           </span>
         </a>
-        <nav className="hidden md:flex items-center gap-7">
+        <nav className="hidden lg:flex items-center gap-7">
           {LINKS.map((l) => (
             <a
               key={l.href}
@@ -49,12 +49,20 @@ export function Nav() {
             </a>
           ))}
         </nav>
-        <a
-          href="#contato"
-          className="inline-flex items-center gap-2 bg-thread text-white text-sm font-semibold px-4 py-2 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
-        >
-          Falar com o fundador
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href="#costureiras"
+            className="hidden sm:inline-flex items-center text-sm font-semibold text-needle link-baste"
+          >
+            Sou costureira
+          </a>
+          <a
+            href="#reparar"
+            className="inline-flex items-center gap-2 bg-thread text-white text-sm font-semibold px-4 py-2 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
+          >
+            Quero reparar uma peça
+          </a>
+        </div>
       </div>
     </header>
   );

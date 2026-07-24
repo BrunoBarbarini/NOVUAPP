@@ -1,4 +1,5 @@
-/* ALINHAVO — Ateliê Editorial: o "ask" em bloco full-bleed + footer costurado */
+/* NOVU — Casa de Vó Editorial: convite final duplo (cliente + costureira) e
+   footer costurado com aviso de piloto. */
 import { Reveal } from "./primitives";
 import { toast } from "sonner";
 
@@ -10,50 +11,52 @@ export function Contact() {
           <Reveal>
             <p className="label-tag text-[oklch(0.72_0.1_150)] mb-4">O convite</p>
             <h2 className="font-display text-3xl sm:text-5xl leading-[1.1] font-semibold">
-              Buscamos <em className="text-[oklch(0.78_0.14_45)]">R$ 150–250 mil</em> para
-              costurar os primeiros 12 meses.
+              Tem uma peça esperando por cuidado?{" "}
+              <em className="text-[oklch(0.78_0.14_45)]">Ou mãos que sabem cuidar?</em>
             </h2>
             <p className="text-[oklch(0.78_0.01_85)] leading-relaxed mt-6 text-lg max-w-2xl lg:mx-auto">
-              Investidores-anjo, fundos de impacto, marcas e brechós que queiram
-              ser parceiros fundadores: o playbook está pronto, o mercado está
-              aberto e a janela de pioneirismo não fica aberta para sempre.
+              A NOVU está começando por São Paulo, de pontinho em pontinho.
+              Deixe seu contato e seja das primeiras pessoas a reparar com a
+              gente — ou das primeiras costureiras da rede.
             </p>
           </Reveal>
           <Reveal delay={120}>
             <div className="mt-10 flex flex-wrap lg:justify-center gap-4">
               <button
-                onClick={() => toast.info("Em breve: agenda direta com o fundador. Por enquanto, use o e-mail ao lado.")}
+                onClick={() => toast.info("Lista de espera abrindo em breve! Enquanto isso, escreva para ola@novu.com.br.")}
                 className="inline-flex items-center gap-2 bg-thread text-white font-semibold px-7 py-4 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
               >
-                Agendar conversa
+                Quero reparar uma peça
               </button>
-              <a
-                href="mailto:contato@alinhavo.com.br?subject=Interesse%20no%20pitch%20Alinhavo"
+              <button
+                onClick={() => toast.info("Cadastro da rede de costureiras abrindo em breve! Escreva para ola@novu.com.br.")}
                 className="inline-flex items-center gap-2 font-semibold px-7 py-4 rounded-[3px] border-[1.5px] border-dashed border-[oklch(0.72_0.1_150)] text-[oklch(0.88_0.05_150)] hover:bg-white/5 transition-colors duration-150 active:scale-[0.97]"
               >
-                contato@alinhavo.com.br
-              </a>
+                Sou costureira
+              </button>
             </div>
           </Reveal>
           <Reveal delay={200}>
-            <p className="label-tag text-[oklch(0.6_0.01_85)] mt-10">
-              Deck completo, plano financeiro e pesquisa de mercado disponíveis sob NDA
-            </p>
+            <a
+              href="mailto:ola@novu.com.br"
+              className="label-tag text-[oklch(0.6_0.01_85)] mt-10 inline-block link-baste"
+            >
+              ola@novu.com.br
+            </a>
           </Reveal>
         </div>
       </section>
       <footer className="bg-ink text-[oklch(0.68_0.01_85)] border-t border-white/10">
         <div className="container py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <img src="/manus-storage/alinhavo-logo_367ede4a.png" alt="" className="h-7 w-7 object-contain brightness-[2.2]" />
-            <span className="font-display text-lg font-semibold text-[oklch(0.9_0.01_85)]">alinhavo</span>
+            <img src="/manus-storage/novu-logo_7804c5bb.png" alt="" className="h-7 w-7 object-contain brightness-[1.6]" />
+            <span className="font-display text-lg font-semibold text-[oklch(0.9_0.01_85)]">novu</span>
           </div>
           <p className="text-xs leading-relaxed max-w-md">
-            Site de apresentação do plano de negócio. Dados de mercado: IEMI, Aliança
-            Empreendedora, Vogue Business, ReLondon. SOJO é marca de terceiros, citada
-            como referência de modelo.
+            Roupas guardam memórias — a gente cuida delas. Dados sobre o ofício:
+            Aliança Empreendedora (2023) e IEMI. Piloto em São Paulo.
           </p>
-          <p className="text-xs font-mono-data">© 2026 Alinhavo</p>
+          <p className="text-xs font-mono-data">© 2026 NOVU · feito com carinho</p>
         </div>
       </footer>
     </>

@@ -1,5 +1,14 @@
 # Dados-chave para o site (extraídos de /home/ubuntu/sojo_brasil/plano_negocio_sojo_brasil.md)
 
+## REBRAND: agora o site é NOVU (cliente final + costureiras, tom afetivo/ESG)
+Assets NOVU (usar URLs exatamente assim):
+- Logo: /manus-storage/novu-logo_7804c5bb.png
+- Hero avó/neta: /manus-storage/novu-hero_21285fa9.png
+- Memória (jaqueta+foto): /manus-storage/novu-memoria_01cb24bc.png
+- Costureira: /manus-storage/novu-costureira_625596f7.png
+- Escola: /manus-storage/novu-escola_b8b9cfd0.png
+Seções atuais: Nav, Hero, Manifesto, HowItWorks (#como-funciona, #reparar), Cause (#a-causa), ForSeamstresses (#costureiras), School (#escola), Sustainability, Contact (#contato). Antigas (Opportunity/Validation/Model/Financials/Roadmap/Impact) deletadas.
+
 ## Hero / tese
 - "O iFood do conserto de roupas" — plataforma de reparos e ajustes com booking digital, logística porta-a-porta, hub de costureiras e B2B white-label.
 - R$ 314,9 bi vestuário Brasil 2025 (IEMI); 6,4 bilhões de peças/ano; mercado endereçável de reparos ~R$ 2 bi/ano (estimativa 1% das peças × R$ 30-35).
