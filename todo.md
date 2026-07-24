@@ -20,6 +20,21 @@
 - [ ] Aplicar correções de compatibilidade (possivelmente simplificar estrutura para raiz padrão)
 - [ ] Validar build + push + orientar usuário
 
+## Roteiro de vídeo NOVU (40s)
+- [ ] Escrever roteiro completo: 3 atos (mãe/vestido rasgado → costureira reparando → entrega à filha)
+- [ ] Tabela cena a cena com tempos, enquadramentos e direção de fotografia
+- [ ] Texto de narração (mulher de meia idade, tom afetivo: roupa guarda abraços/memórias)
+- [ ] Direção de trilha sonora, som e tipografia/lettering final
+- [ ] Entregar arquivo ao usuário
+
+## Produção do vídeo "O Vestido" (40s, 9:16)
+- [ ] Ler skills de música/TTS antes de gerar áudio
+- [ ] Gerar clipes 9:16 das cenas (I: mãe/vestido; II: costureira; III: entrega/abraço; logo final)
+- [ ] Gerar narração feminina de meia idade (texto do roteiro)
+- [ ] Gerar trilha acústica (violão + cordas, crescendo suave)
+- [ ] Montar com ffmpeg: cortes, mixagem narração+trilha, lettering final NOVU
+- [ ] Revisar duração (~40s), sincronia e qualidade; entregar
+
 ### Diagnóstico refinado
 - npm puro: ERESOLVE por peer dep vite ^4||^5 do @builder.io/vite-plugin-jsx-loc → install falha, "vite: not found"
 - npm com legacy-peer-deps: instala vite-plugin-manus-runtime → injeta <script id="manus-runtime"> inline de 350KB no index.html de produção
