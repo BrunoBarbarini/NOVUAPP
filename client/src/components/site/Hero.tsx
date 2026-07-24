@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Reveal, SwingTag } from "./primitives";
 
-const HERO_VIDEO_SRC = "/manus-storage/novu_hero_video_16x9_a7f5c97a.mp4";
+// URL CDN pública e permanente — funciona em qualquer hospedagem
+// (Vercel/novuapp.com.br e Manus/manus.space).
+const HERO_VIDEO_SRC =
+  "https://files.manuscdn.com/user_upload_by_module/session_file/310419663029189551/FBtWTsGdJXWPwcvV.mp4";
 
 function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
