@@ -204,8 +204,13 @@ function vitePluginStorageProxy(): Plugin {
 
 // Manus-specific plugins are loaded dynamically so the project builds anywhere
 // (Vercel, Netlify, readdy.ai, etc.) even when these packages are absent.
-async function loadOptionalManusPlugins(): Promise<Plugin[]> {
+// They are NOT listed in package.json to keep npm/pnpm installs conflict-free;
+// when present in node_modules (Manus sandbox), they are picked up in dev only.
+async function loadOptionalManusPlugins(command: string): Promise<Plugin[]> {
   const optional: Plugin[] = [];
+  if (command !== "serve") {
+    return optional; // never include Manus dev plugins in production builds
+  }
   try {
     const { jsxLocPlugin } = await import("@builder.io/vite-plugin-jsx-loc");
     optional.push(jsxLocPlugin() as Plugin);
@@ -221,11 +226,11 @@ async function loadOptionalManusPlugins(): Promise<Plugin[]> {
   return optional;
 }
 
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    ...(await loadOptionalManusPlugins()),
+    ...(await loadOptionalManusPlugins(command)),
     vitePluginManusDebugCollector(),
     vitePluginStorageProxy(),
   ],

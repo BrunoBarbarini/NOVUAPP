@@ -9,7 +9,7 @@ React 19 + Vite 7 + Tailwind CSS 4 + shadcn/ui. Site 100% estático (SPA) — n�
 ## Desenvolvimento local
 
 ```bash
-pnpm install   # ou npm install / yarn
+pnpm install   # ou npm install / yarn (o .npmrc já cobre peer deps antigas)
 pnpm dev       # dev server em http://localhost:3000
 ```
 
@@ -27,7 +27,7 @@ A saída fica em `dist/public/` — publique essa pasta em qualquer host estáti
 | Output directory | `dist/public` |
 | SPA fallback | redirecionar 404 → `/index.html` |
 
-Observações: o `index.html` do Vite fica em `client/` (configurado via `root` no `vite.config.ts`); não deve existir `index.html` na raiz do repositório. Os pacotes `vite-plugin-manus-runtime` e `@builder.io/vite-plugin-jsx-loc` são `optionalDependencies` usados apenas no ambiente Manus — o build funciona normalmente sem eles.
+Observações: o `index.html` do Vite fica em `client/` (configurado via `root` no `vite.config.ts`); não deve existir `index.html` na raiz do repositório. Os plugins do ambiente Manus (`vite-plugin-manus-runtime`, `@builder.io/vite-plugin-jsx-loc`) NÃO fazem parte do `package.json`: são carregados dinamicamente apenas em modo dev quando presentes, e nunca entram no build de produção.
 
 ## Estrutura
 
