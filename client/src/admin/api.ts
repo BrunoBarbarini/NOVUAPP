@@ -39,20 +39,22 @@ type PedidoRow = {
   peca: string;
   servico: string;
   valor: number;
-  valor_extra: number | null;
-  extra_descricao: string | null;
   status: string;
-  criado_em: string;
+  created_at: string;
   prazo: string | null;
-  observacao: string | null;
+  observacoes: string | null;
   costureira_id: string | null;
   costureiras: { nome: string; bairro: string } | null;
+  pedido_extras: { descricao: string; valor: number; status: string }[] | null;
 };
 
 const PEDIDO_SELECT =
-  "id, codigo, cliente_nome, bairro, peca, servico, valor, valor_extra, extra_descricao, status, criado_em, prazo, observacao, costureira_id, costureiras ( nome, bairro )";
+  "id, codigo, cliente_nome, bairro, peca, servico, valor, status, created_at, prazo, observacoes, costureira_id, costureiras ( nome, bairro ), pedido_extras ( descricao, valor, status )";
 
 function mapPedido(r: PedidoRow): Pedido & { id: string; costureiraId: string | null } {
+  const extraAprovado = (r.pedido_extras ?? []).find((e) => e.status === "aprovado");
+  const extraProposto = (r.pedido_extras ?? []).find((e) => e.status === "proposto");
+  const extra = extraAprovado ?? extraProposto;
   return {
     id: r.id,
     codigo: r.codigo,
@@ -61,15 +63,15 @@ function mapPedido(r: PedidoRow): Pedido & { id: string; costureiraId: string | 
     peca: r.peca,
     servico: r.servico,
     valor: Number(r.valor),
-    extra: r.valor_extra
-      ? { descricao: r.extra_descricao ?? "Ajuste adicional", valor: Number(r.valor_extra), aprovado: true }
+    extra: extra
+      ? { descricao: extra.descricao, valor: Number(extra.valor), aprovado: extra.status === "aprovado" }
       : undefined,
     costureira: r.costureiras ? `${r.costureiras.nome} (${r.costureiras.bairro})` : null,
     costureiraId: r.costureira_id,
     status: DB_TO_FRONT_STATUS[r.status] ?? "novo",
-    criadoEm: r.criado_em,
+    criadoEm: r.created_at,
     prazo: r.prazo ?? "",
-    observacao: r.observacao ?? undefined,
+    observacao: r.observacoes ?? undefined,
   };
 }
 
@@ -77,7 +79,7 @@ export async function fetchPedidos() {
   const { data, error } = await supabase
     .from("pedidos")
     .select(PEDIDO_SELECT)
-    .order("criado_em", { ascending: false });
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return (data as unknown as PedidoRow[]).map(mapPedido);
 }
@@ -105,7 +107,7 @@ type CostureiraRow = {
   nome: string;
   bairro: string;
   cidade: string;
-  whatsapp: string | null;
+  celular: string | null;
   especialidades: string[];
   experiencia: string | null;
   raio_km: number | null;
@@ -114,8 +116,8 @@ type CostureiraRow = {
   origem: string | null;
   avaliacao: number | null;
   status: string;
-  criado_em: string;
-  ativa_desde: string | null;
+  created_at: string;
+  aprovada_em: string | null;
 };
 
 export async function fetchCadastrosPendentes(): Promise<(CadastroCostureira & { dbId: string })[]> {
@@ -123,7 +125,7 @@ export async function fetchCadastrosPendentes(): Promise<(CadastroCostureira & {
     .from("costureiras")
     .select("*")
     .eq("status", "pendente")
-    .order("criado_em", { ascending: true });
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return (data as CostureiraRow[]).map((r) => ({
     id: r.id,
@@ -131,13 +133,13 @@ export async function fetchCadastrosPendentes(): Promise<(CadastroCostureira & {
     nome: r.nome,
     bairro: r.bairro,
     cidade: r.cidade,
-    whatsapp: r.whatsapp ?? "",
+    whatsapp: r.celular ?? "",
     especialidades: r.especialidades ?? [],
     experiencia: r.experiencia ?? "",
     raioKm: r.raio_km ?? 0,
     historia: r.historia ?? "",
     fotos: r.fotos_portfolio ?? 0,
-    enviadoEm: r.criado_em,
+    enviadoEm: r.created_at,
     status: "pendente",
     origem: r.origem ?? "Indicação",
   }));
@@ -148,7 +150,7 @@ export async function decidirCadastroDb(id: string, aprovar: boolean) {
     .from("costureiras")
     .update(
       aprovar
-        ? { status: "ativa", ativa_desde: new Date().toISOString().slice(0, 10) }
+        ? { status: "ativa", aprovada_em: new Date().toISOString() }
         : { status: "recusada" },
     )
     .eq("id", id);
@@ -158,21 +160,32 @@ export async function decidirCadastroDb(id: string, aprovar: boolean) {
 export async function fetchCostureirasAtivas(): Promise<(CostureiraAtiva & { dbId: string })[]> {
   const [{ data: cost, error: e1 }, { data: peds, error: e2 }] = await Promise.all([
     supabase.from("costureiras").select("*").in("status", ["ativa", "pausada"]).order("nome"),
-    supabase.from("pedidos").select("costureira_id, status, valor, valor_extra, criado_em"),
+    supabase.from("pedidos").select("costureira_id, status, valor, created_at, pedido_extras ( valor, status )"),
   ]);
   if (e1) throw e1;
   if (e2) throw e2;
+  type PedLeve = {
+    costureira_id: string | null;
+    status: string;
+    valor: number;
+    created_at: string;
+    pedido_extras: { valor: number; status: string }[] | null;
+  };
+  const somaExtra = (p: PedLeve) =>
+    (p.pedido_extras ?? [])
+      .filter((e) => e.status === "aprovado")
+      .reduce((s, e) => s + Number(e.valor), 0);
   const agora = new Date();
   const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
   return (cost as CostureiraRow[]).map((r) => {
-    const meus = (peds ?? []).filter((p) => p.costureira_id === r.id);
-    const noMes = meus.filter((p) => String(p.criado_em).startsWith(mesAtual));
+    const meus = ((peds ?? []) as unknown as PedLeve[]).filter((p) => p.costureira_id === r.id);
+    const noMes = meus.filter((p) => String(p.created_at).startsWith(mesAtual));
     const emAndamento = meus.filter((p) =>
       ["aguardando_aceite", "coleta_agendada", "em_costura", "pronto"].includes(p.status),
     ).length;
     const ganhos = noMes
       .filter((p) => p.status !== "cancelado")
-      .reduce((s, p) => s + (Number(p.valor) + Number(p.valor_extra ?? 0)) * 0.7, 0);
+      .reduce((s, p) => s + (Number(p.valor) + somaExtra(p)) * 0.7, 0);
     return {
       id: r.id,
       dbId: r.id,
@@ -183,7 +196,7 @@ export async function fetchCostureirasAtivas(): Promise<(CostureiraAtiva & { dbI
       emAndamento,
       avaliacao: Number(r.avaliacao ?? 0),
       ganhosMes: Math.round(ganhos),
-      desde: r.ativa_desde ?? r.criado_em.slice(0, 10),
+      desde: (r.aprovada_em ?? r.created_at).slice(0, 10),
       status: r.status === "ativa" ? "ativa" : "pausada",
     };
   });
@@ -193,26 +206,35 @@ export async function fetchCostureirasAtivas(): Promise<(CostureiraAtiva & { dbI
 
 type RepasseRow = {
   id: string;
-  periodo: string;
-  qtd_pedidos: number;
+  periodo_inicio: string;
+  periodo_fim: string;
+  pedidos: number;
   valor: number;
   status: string;
   data_pagamento: string | null;
   costureiras: { nome: string } | null;
 };
 
+function formatarPeriodo(ini: string, fim: string) {
+  const f = (s: string) => {
+    const [, m, d] = s.split("-");
+    return `${d}/${m}`;
+  };
+  return `${f(ini)} – ${f(fim)}`;
+}
+
 export async function fetchRepasses(): Promise<(Repasse & { dbId: string })[]> {
   const { data, error } = await supabase
     .from("repasses")
-    .select("id, periodo, qtd_pedidos, valor, status, data_pagamento, costureiras ( nome )")
-    .order("data_pagamento", { ascending: false, nullsFirst: true });
+    .select("id, periodo_inicio, periodo_fim, pedidos, valor, status, data_pagamento, costureiras ( nome )")
+    .order("periodo_inicio", { ascending: false });
   if (error) throw error;
   return (data as unknown as RepasseRow[]).map((r) => ({
     id: r.id,
     dbId: r.id,
     costureira: r.costureiras?.nome ?? "—",
-    periodo: r.periodo,
-    pedidos: r.qtd_pedidos,
+    periodo: formatarPeriodo(r.periodo_inicio, r.periodo_fim),
+    pedidos: r.pedidos,
     valor: Number(r.valor),
     status: (r.status === "pago" ? "pago" : r.status === "a_caminho" ? "a_caminho" : "agendado") as Repasse["status"],
     data: r.data_pagamento ?? "",
@@ -231,9 +253,16 @@ export async function marcarRepassePagoDb(id: string) {
 export async function fetchReceitaSemanal(): Promise<SemanaReceita[]> {
   const { data, error } = await supabase
     .from("pedidos")
-    .select("valor, valor_extra, criado_em, status")
+    .select("valor, created_at, status, pedido_extras ( valor, status )")
     .neq("status", "cancelado");
   if (error) throw error;
+  type Row = {
+    valor: number;
+    created_at: string;
+    status: string;
+    pedido_extras: { valor: number; status: string }[] | null;
+  };
+  const rows = (data ?? []) as unknown as Row[];
   const semanas: SemanaReceita[] = [];
   const hoje = new Date();
   for (let i = 7; i >= 0; i--) {
@@ -242,12 +271,20 @@ export async function fetchReceitaSemanal(): Promise<SemanaReceita[]> {
     ini.setHours(0, 0, 0, 0);
     const fim = new Date(ini);
     fim.setDate(ini.getDate() + 7);
-    const bruto = (data ?? [])
+    const bruto = rows
       .filter((p) => {
-        const d = new Date(p.criado_em);
+        const d = new Date(p.created_at);
         return d >= ini && d < fim;
       })
-      .reduce((s, p) => s + Number(p.valor) + Number(p.valor_extra ?? 0), 0);
+      .reduce(
+        (s, p) =>
+          s +
+          Number(p.valor) +
+          (p.pedido_extras ?? [])
+            .filter((e) => e.status === "aprovado")
+            .reduce((se, e) => se + Number(e.valor), 0),
+        0,
+      );
     semanas.push({
       semana: `${String(ini.getDate()).padStart(2, "0")}/${String(ini.getMonth() + 1).padStart(2, "0")}`,
       bruto: Math.round(bruto),
