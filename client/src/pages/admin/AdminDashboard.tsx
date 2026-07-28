@@ -2,30 +2,65 @@
  * NOVU Admin — Visão geral (Ateliê Editorial).
  * KPIs em etiquetas de papel, gráfico de receita (Views/CSS), fila do dia e pendências.
  */
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import AdminLayout from "@/admin/AdminLayout";
 import { Kpi, Chip, SectionTitle } from "@/admin/ui";
 import {
-  pedidos,
-  cadastrosPendentes,
-  receitaSemanal,
   brl,
   dataCurta,
   STATUS_PEDIDO_LABEL,
   STATUS_PEDIDO_TONE,
   TAXA_NOVU,
+  type Pedido,
+  type CadastroCostureira,
 } from "@/admin/data";
+import {
+  fetchPedidos,
+  fetchCadastrosPendentes,
+  fetchReceitaSemanal,
+  subscribe,
+  type SemanaReceita,
+} from "@/admin/api";
 import { ArrowRight, AlertTriangle } from "lucide-react";
 
 export default function AdminDashboard() {
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [cadastrosPendentes, setCadastros] = useState<CadastroCostureira[]>([]);
+  const [receitaSemanal, setReceita] = useState<SemanaReceita[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    const carregar = () =>
+      Promise.all([fetchPedidos(), fetchCadastrosPendentes(), fetchReceitaSemanal()])
+        .then(([p, c, r]) => {
+          if (!ativo) return;
+          setPedidos(p);
+          setCadastros(c);
+          setReceita(r);
+        })
+        .catch(() => {});
+    carregar();
+    const offP = subscribe("pedidos", carregar);
+    const offC = subscribe("costureiras", carregar);
+    return () => {
+      ativo = false;
+      offP();
+      offC();
+    };
+  }, []);
+
   const ativos = pedidos.filter((p) => !["entregue", "cancelado"].includes(p.status));
   const semCostureira = pedidos.filter((p) => !p.costureira && p.status !== "cancelado");
   const receitaMes = receitaSemanal.slice(-4).reduce((s, w) => s + w.bruto, 0);
-  const max = Math.max(...receitaSemanal.map((w) => w.bruto));
+  const max = Math.max(1, ...receitaSemanal.map((w) => w.bruto));
   const urgentes = ativos.filter((p) => new Date(p.prazo).getTime() - Date.now() < 2 * 864e5);
 
   return (
-    <AdminLayout title="Visão geral" subtitle="Segunda-feira, 28 de julho — o ateliê está em movimento.">
+    <AdminLayout
+      title="Visão geral"
+      subtitle={`${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })} — o ateliê está em movimento.`}
+    >
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <Kpi label="Pedidos ativos" value={ativos.length} hint={`${semCostureira.length} aguardando costureira`} tone="needle" />
         <Kpi label="Receita do mês (bruta)" value={brl(receitaMes)} hint={`NOVU fica com ${brl(Math.round(receitaMes * TAXA_NOVU))}`} tone="thread" />
@@ -62,8 +97,8 @@ export default function AdminDashboard() {
               ))}
             </div>
             <p className="mt-4 border-t border-dashed border-border pt-3 text-xs text-muted-foreground">
-              Crescimento de <strong className="text-needle">+63%</strong> desde o início de junho. A taxa NOVU (30%)
-              está aplicada sobre cada pedido concluído.
+              A taxa NOVU (30%) está aplicada sobre cada pedido concluído; os valores vêm direto do banco, em tempo
+              real.
             </p>
           </div>
         </section>
@@ -170,4 +205,3 @@ export default function AdminDashboard() {
     </AdminLayout>
   );
 }
-

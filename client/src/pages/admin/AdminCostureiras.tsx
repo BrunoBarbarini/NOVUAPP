@@ -2,15 +2,35 @@
  * NOVU Admin — Rede de costureiras (Ateliê Editorial).
  * Visão da rede ativa: especialidades, carga, avaliação e ganhos do mês.
  */
+import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/AdminLayout";
 import { Kpi, Chip, SectionTitle } from "@/admin/ui";
-import { costureirasAtivas, brl } from "@/admin/data";
+import { brl, type CostureiraAtiva } from "@/admin/data";
+import { fetchCostureirasAtivas, subscribe } from "@/admin/api";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AdminCostureiras() {
+  const [costureirasAtivas, setCostureiras] = useState<CostureiraAtiva[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    const carregar = () =>
+      fetchCostureirasAtivas()
+        .then((d) => {
+          if (ativo) setCostureiras(d);
+        })
+        .catch(() => {});
+    carregar();
+    const off = subscribe("costureiras", carregar);
+    return () => {
+      ativo = false;
+      off();
+    };
+  }, []);
+
   const ativas = costureirasAtivas.filter((c) => c.status === "ativa");
-  const mediaAval = ativas.reduce((s, c) => s + c.avaliacao, 0) / ativas.length;
+  const mediaAval = ativas.length ? ativas.reduce((s, c) => s + c.avaliacao, 0) / ativas.length : 0;
 
   return (
     <AdminLayout title="Costureiras" subtitle="A rede que faz a NOVU acontecer, bairro a bairro.">
@@ -85,4 +105,3 @@ export default function AdminCostureiras() {
     </AdminLayout>
   );
 }
-

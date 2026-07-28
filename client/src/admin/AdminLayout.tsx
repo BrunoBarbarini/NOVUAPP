@@ -6,6 +6,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { supabase } from "./supabase";
 import {
   LayoutDashboard,
   Package,
@@ -21,18 +22,10 @@ import {
 const NAV = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
   { href: "/admin/pedidos", label: "Pedidos", icon: Package },
-  { href: "/admin/aprovacoes", label: "Aprovações", icon: UserCheck, badge: 3 },
+  { href: "/admin/aprovacoes", label: "Aprovações", icon: UserCheck, badge: 0 },
   { href: "/admin/costureiras", label: "Costureiras", icon: Users },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
 ];
-
-export function isAdminLogged() {
-  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("demo") === "1") {
-    localStorage.setItem("novu_admin", "1");
-    return true;
-  }
-  return typeof window !== "undefined" && localStorage.getItem("novu_admin") === "1";
-}
 
 export default function AdminLayout({
   title,
@@ -45,13 +38,45 @@ export default function AdminLayout({
 }) {
   const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
+  const [pronto, setPronto] = useState(false);
+  const [pendentes, setPendentes] = useState(0);
 
   useEffect(() => {
-    if (!isAdminLogged()) navigate("/admin/login");
+    let ativo = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!ativo) return;
+      if (!data.session) navigate("/admin/login");
+      else setPronto(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_ev, session) => {
+      if (!session) navigate("/admin/login");
+    });
+    return () => {
+      ativo = false;
+      sub.subscription.unsubscribe();
+    };
   }, [navigate]);
 
-  const sair = () => {
-    localStorage.removeItem("novu_admin");
+  useEffect(() => {
+    if (!pronto) return;
+    const carregar = () =>
+      supabase
+        .from("costureiras")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pendente")
+        .then(({ count }) => setPendentes(count ?? 0));
+    carregar();
+    const channel = supabase
+      .channel("layout-costureiras")
+      .on("postgres_changes", { event: "*", schema: "public", table: "costureiras" }, carregar)
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [pronto]);
+
+  const sair = async () => {
+    await supabase.auth.signOut();
     navigate("/admin/login");
   };
 
@@ -61,6 +86,7 @@ export default function AdminLayout({
         const active =
           item.href === "/admin" ? location === "/admin" : location.startsWith(item.href);
         const Icon = item.icon;
+        const badge = item.href === "/admin/aprovacoes" ? pendentes : 0;
         return (
           <Link
             key={item.href}
@@ -75,14 +101,14 @@ export default function AdminLayout({
           >
             <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.4 : 2} />
             <span className="flex-1">{item.label}</span>
-            {item.badge ? (
+            {badge ? (
               <span
                 className={cn(
                   "font-mono text-[11px] rounded-full px-1.5 py-0.5 leading-none",
                   active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-thread/15 text-thread",
                 )}
               >
-                {item.badge}
+                {badge}
               </span>
             ) : null}
           </Link>
@@ -119,6 +145,16 @@ export default function AdminLayout({
       </div>
     </>
   );
+
+  if (!pronto) {
+    return (
+      <div className="min-h-screen bg-linen grid place-items-center">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+          NOVU · abrindo o ateliê…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-linen text-ink flex">
@@ -166,7 +202,7 @@ export default function AdminLayout({
         <main className="flex-1 px-5 py-6 lg:px-8 lg:py-8">{children}</main>
         <footer className="px-5 pb-6 lg:px-8">
           <p className="border-t border-dashed border-border pt-4 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            NOVU · painel interno · dados de demonstração
+            NOVU · painel interno · conectado ao ateliê em tempo real
           </p>
         </footer>
       </div>

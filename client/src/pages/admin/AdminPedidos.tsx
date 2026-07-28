@@ -3,12 +3,10 @@
  * Lista com filtros por status + busca; detalhe em painel lateral (Sheet)
  * com timeline (espelho da T8 do app), extra aprovado e atribuição de costureira.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/admin/AdminLayout";
 import { Kpi, Chip, EmptyRow } from "@/admin/ui";
 import {
-  pedidos as pedidosIniciais,
-  costureirasAtivas,
   brl,
   dataCurta,
   STATUS_PEDIDO_LABEL,
@@ -17,6 +15,7 @@ import {
   type Pedido,
   type StatusPedido,
 } from "@/admin/data";
+import { fetchPedidos, fetchCostureirasAtivas, atribuirCostureiraDb, subscribe } from "@/admin/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -44,11 +43,40 @@ const FILTROS: { id: "todos" | StatusPedido; label: string }[] = [
 
 const ETAPAS: StatusPedido[] = ["novo", "aguardando_aceite", "coleta", "em_costura", "pronto", "entregue"];
 
+type PedidoDb = Pedido & { id: string; costureiraId: string | null };
+type CostOpcao = { id: string; nome: string; bairro: string };
+
 export default function AdminPedidos() {
-  const [lista, setLista] = useState<Pedido[]>(pedidosIniciais);
+  const [lista, setLista] = useState<PedidoDb[]>([]);
+  const [costureiras, setCostureiras] = useState<CostOpcao[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [filtro, setFiltro] = useState<"todos" | StatusPedido>("todos");
   const [busca, setBusca] = useState("");
-  const [sel, setSel] = useState<Pedido | null>(null);
+  const [sel, setSel] = useState<PedidoDb | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    const carregar = async () => {
+      try {
+        const [peds, costs] = await Promise.all([fetchPedidos(), fetchCostureirasAtivas()]);
+        if (!ativo) return;
+        setLista(peds);
+        setCostureiras(
+          costs.filter((c) => c.status === "ativa").map((c) => ({ id: c.dbId, nome: c.nome, bairro: c.bairro })),
+        );
+      } catch {
+        if (ativo) toast.error("Não foi possível carregar os pedidos.");
+      } finally {
+        if (ativo) setCarregando(false);
+      }
+    };
+    carregar();
+    const off = subscribe("pedidos", carregar);
+    return () => {
+      ativo = false;
+      off();
+    };
+  }, []);
 
   const filtrados = useMemo(() => {
     return lista.filter((p) => {
@@ -61,12 +89,27 @@ export default function AdminPedidos() {
     });
   }, [lista, filtro, busca]);
 
-  const atribuir = (codigo: string, costureira: string) => {
-    setLista((ls) =>
-      ls.map((p) => (p.codigo === codigo ? { ...p, costureira, status: "aguardando_aceite" as StatusPedido } : p)),
-    );
-    setSel((s) => (s && s.codigo === codigo ? { ...s, costureira, status: "aguardando_aceite" } : s));
-    toast.success(`Pedido ${codigo} enviado para ${costureira.split(" (")[0]}`);
+  const atribuir = async (codigo: string, costureiraId: string) => {
+    const pedido = lista.find((p) => p.codigo === codigo);
+    const c = costureiras.find((x) => x.id === costureiraId);
+    if (!pedido || !c) return;
+    const rotulo = `${c.nome} (${c.bairro})`;
+    try {
+      await atribuirCostureiraDb(pedido.id, costureiraId);
+      setLista((ls) =>
+        ls.map((p) =>
+          p.id === pedido.id
+            ? { ...p, costureira: rotulo, costureiraId, status: "aguardando_aceite" as StatusPedido }
+            : p,
+        ),
+      );
+      setSel((s) =>
+        s && s.id === pedido.id ? { ...s, costureira: rotulo, costureiraId, status: "aguardando_aceite" } : s,
+      );
+      toast.success(`Pedido ${codigo} enviado para ${c.nome}`);
+    } catch {
+      toast.error("Não foi possível atribuir. Tente novamente.");
+    }
   };
 
   const ativos = lista.filter((p) => !["entregue", "cancelado"].includes(p.status));
@@ -106,7 +149,9 @@ export default function AdminPedidos() {
       </div>
 
       <div className="mt-4 overflow-x-auto rounded-md border border-border bg-card">
-        {filtrados.length === 0 ? (
+        {carregando ? (
+          <EmptyRow>Carregando pedidos do ateliê…</EmptyRow>
+        ) : filtrados.length === 0 ? (
           <EmptyRow>Nenhum pedido encontrado com esses filtros.</EmptyRow>
         ) : (
           <table className="w-full text-sm">
@@ -281,7 +326,7 @@ export default function AdminPedidos() {
               {!sel.costureira && sel.status !== "cancelado" && (
                 <div className="mt-5 rounded-md border border-thread/40 bg-thread/8 p-4">
                   <p className="mb-2 text-sm font-medium">Atribuir costureira</p>
-                  <AtribuirForm codigo={sel.codigo} onAtribuir={atribuir} />
+                  <AtribuirForm codigo={sel.codigo} costureiras={costureiras} onAtribuir={atribuir} />
                 </div>
               )}
             </div>
@@ -292,25 +337,31 @@ export default function AdminPedidos() {
   );
 }
 
-function AtribuirForm({ codigo, onAtribuir }: { codigo: string; onAtribuir: (c: string, n: string) => void }) {
-  const [nome, setNome] = useState("");
+function AtribuirForm({
+  codigo,
+  costureiras,
+  onAtribuir,
+}: {
+  codigo: string;
+  costureiras: CostOpcao[];
+  onAtribuir: (codigo: string, costureiraId: string) => void;
+}) {
+  const [id, setId] = useState("");
   return (
     <div className="flex gap-2">
-      <Select value={nome} onValueChange={setNome}>
+      <Select value={id} onValueChange={setId}>
         <SelectTrigger className="flex-1 bg-card">
           <SelectValue placeholder="Escolher da rede…" />
         </SelectTrigger>
         <SelectContent>
-          {costureirasAtivas
-            .filter((c) => c.status === "ativa")
-            .map((c) => (
-              <SelectItem key={c.id} value={c.nome}>
-                {c.nome} · {c.bairro}
-              </SelectItem>
-            ))}
+          {costureiras.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.nome} · {c.bairro}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
-      <Button disabled={!nome} onClick={() => onAtribuir(codigo, nome)}>
+      <Button disabled={!id} onClick={() => onAtribuir(codigo, id)}>
         Enviar
       </Button>
     </div>

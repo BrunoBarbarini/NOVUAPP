@@ -2,22 +2,50 @@
  * NOVU Admin — Aprovações de costureiras (Ateliê Editorial).
  * O outro lado da T18 do app: fila de cadastros com portfólio, história e aprovar/recusar.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/AdminLayout";
 import { Chip, EmptyRow, SectionTitle } from "@/admin/ui";
-import { cadastrosPendentes as iniciais, dataCurta, type CadastroCostureira } from "@/admin/data";
+import { dataCurta, type CadastroCostureira } from "@/admin/data";
+import { fetchCadastrosPendentes, decidirCadastroDb, subscribe } from "@/admin/api";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, MapPin, Phone, Camera, Quote } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function AdminAprovacoes() {
-  const [fila, setFila] = useState<CadastroCostureira[]>(iniciais);
+  const [fila, setFila] = useState<CadastroCostureira[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [historico, setHistorico] = useState<CadastroCostureira[]>([]);
 
-  const decidir = (id: string, status: "aprovada" | "recusada") => {
+  useEffect(() => {
+    let ativo = true;
+    const carregar = async () => {
+      try {
+        const dados = await fetchCadastrosPendentes();
+        if (ativo) setFila(dados);
+      } catch {
+        if (ativo) toast.error("Não foi possível carregar a fila.");
+      } finally {
+        if (ativo) setCarregando(false);
+      }
+    };
+    carregar();
+    const off = subscribe("costureiras", carregar);
+    return () => {
+      ativo = false;
+      off();
+    };
+  }, []);
+
+  const decidir = async (id: string, status: "aprovada" | "recusada") => {
     const cad = fila.find((c) => c.id === id);
     if (!cad) return;
+    try {
+      await decidirCadastroDb(id, status === "aprovada");
+    } catch {
+      toast.error("Não foi possível salvar a decisão. Tente novamente.");
+      return;
+    }
     setFila((f) => f.filter((c) => c.id !== id));
     setHistorico((h) => [{ ...cad, status }, ...h]);
     toast.success(
@@ -33,7 +61,9 @@ export default function AdminAprovacoes() {
       subtitle="Cada aprovação é uma costureira que passa a viver do próprio ofício."
     >
       <SectionTitle>Fila de cadastros ({fila.length})</SectionTitle>
-      {fila.length === 0 ? (
+      {carregando ? (
+        <EmptyRow>Carregando a fila de cadastros…</EmptyRow>
+      ) : fila.length === 0 ? (
         <EmptyRow>Fila limpa — nenhuma costureira aguardando. Bom trabalho!</EmptyRow>
       ) : (
         <div className="grid gap-4 xl:grid-cols-3 lg:grid-cols-2">

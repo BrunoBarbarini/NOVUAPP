@@ -2,9 +2,19 @@
  * NOVU Admin — Financeiro (Ateliê Editorial).
  * O outro lado da T21 do app: receita, taxa NOVU e repasses às costureiras.
  */
+import { useEffect, useState } from "react";
 import AdminLayout from "@/admin/AdminLayout";
 import { Kpi, Chip, SectionTitle } from "@/admin/ui";
-import { receitaSemanal, repasses, brl, dataCurta, TAXA_NOVU, type StatusRepasse } from "@/admin/data";
+import { brl, dataCurta, TAXA_NOVU, type StatusRepasse, type Repasse } from "@/admin/data";
+import {
+  fetchRepasses,
+  fetchReceitaSemanal,
+  marcarRepassePagoDb,
+  subscribe,
+  type SemanaReceita,
+} from "@/admin/api";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const REPASSE_LABEL: Record<StatusRepasse, string> = {
@@ -20,12 +30,45 @@ const REPASSE_TONE: Record<StatusRepasse, string> = {
 };
 
 export default function AdminFinanceiro() {
+  const [receitaSemanal, setReceita] = useState<SemanaReceita[]>([]);
+  const [repasses, setRepasses] = useState<(Repasse & { dbId: string })[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    const carregar = () =>
+      Promise.all([fetchReceitaSemanal(), fetchRepasses()])
+        .then(([r, reps]) => {
+          if (!ativo) return;
+          setReceita(r);
+          setRepasses(reps);
+        })
+        .catch(() => {});
+    carregar();
+    const offR = subscribe("repasses", carregar);
+    const offP = subscribe("pedidos", carregar);
+    return () => {
+      ativo = false;
+      offR();
+      offP();
+    };
+  }, []);
+
+  const marcarPago = async (r: Repasse & { dbId: string }) => {
+    try {
+      await marcarRepassePagoDb(r.dbId);
+      setRepasses((rs) => rs.map((x) => (x.dbId === r.dbId ? { ...x, status: "pago" as StatusRepasse } : x)));
+      toast.success(`Repasse de ${r.costureira} marcado como pago.`);
+    } catch {
+      toast.error("Não foi possível atualizar o repasse.");
+    }
+  };
+
   const mes = receitaSemanal.slice(-4);
   const bruto = mes.reduce((s, w) => s + w.bruto, 0);
   const novu = Math.round(bruto * TAXA_NOVU);
   const costureiras = bruto - novu;
   const pendentes = repasses.filter((r) => r.status !== "pago").reduce((s, r) => s + r.valor, 0);
-  const max = Math.max(...receitaSemanal.map((w) => w.bruto));
+  const max = Math.max(1, ...receitaSemanal.map((w) => w.bruto));
 
   return (
     <AdminLayout title="Financeiro" subtitle="Cada pedido costurado vira renda dividida com justiça: 70/30.">
@@ -76,11 +119,12 @@ export default function AdminFinanceiro() {
                 <th className="px-4 py-3 text-right">Valor</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Ação</th>
               </tr>
             </thead>
             <tbody>
               {repasses.map((r) => (
-                <tr key={r.id} className="border-b border-border/60 last:border-0 hover:bg-linen/60">
+                <tr key={r.dbId} className="border-b border-border/60 last:border-0 hover:bg-linen/60">
                   <td className="px-4 py-3 font-medium">{r.costureira}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.periodo}</td>
                   <td className="px-4 py-3 text-center font-mono">{r.pedidos}</td>
@@ -88,6 +132,15 @@ export default function AdminFinanceiro() {
                   <td className="px-4 py-3 font-mono text-xs">{dataCurta(r.data)}</td>
                   <td className="px-4 py-3">
                     <Chip className={cn(REPASSE_TONE[r.status])}>{REPASSE_LABEL[r.status]}</Chip>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {r.status !== "pago" ? (
+                      <Button size="sm" variant="outline" className="h-7 border-border text-xs" onClick={() => marcarPago(r)}>
+                        Marcar pago
+                      </Button>
+                    ) : (
+                      <span className="font-mono text-[10px] text-muted-foreground">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
