@@ -5,12 +5,24 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPedidos from "./pages/admin/AdminPedidos";
+import AdminAprovacoes from "./pages/admin/AdminAprovacoes";
+import AdminCostureiras from "./pages/admin/AdminCostureiras";
+import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/admin/login"} component={AdminLogin} />
+      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/admin/pedidos"} component={AdminPedidos} />
+      <Route path={"/admin/aprovacoes"} component={AdminAprovacoes} />
+      <Route path={"/admin/costureiras"} component={AdminCostureiras} />
+      <Route path={"/admin/financeiro"} component={AdminFinanceiro} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
