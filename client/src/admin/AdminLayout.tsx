@@ -13,6 +13,7 @@ import {
   UserCheck,
   Users,
   Wallet,
+  Contact,
   LogOut,
   Scissors,
   Menu,
@@ -24,6 +25,7 @@ const NAV = [
   { href: "/admin/pedidos", label: "Pedidos", icon: Package },
   { href: "/admin/aprovacoes", label: "Aprovações", icon: UserCheck, badge: 0 },
   { href: "/admin/costureiras", label: "Costureiras", icon: Users },
+  { href: "/admin/clientes", label: "Clientes", icon: Contact },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
 ];
 

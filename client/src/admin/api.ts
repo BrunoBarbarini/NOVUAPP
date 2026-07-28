@@ -204,6 +204,66 @@ export async function fetchCostureirasAtivas(): Promise<(CostureiraAtiva & { dbI
 
 /* ---------- repasses e receita ---------- */
 
+/* ---------- clientes ---------- */
+
+export type ClienteAdmin = {
+  id: string;
+  nome: string;
+  celular: string;
+  bairro: string;
+  cidade: string;
+  origem: string;
+  criadoEm: string;
+  pedidos: number;
+  totalGasto: number;
+  ultimoPedidoEm: string | null;
+};
+
+export async function fetchClientes(): Promise<ClienteAdmin[]> {
+  const [{ data: perfis, error: e1 }, { data: peds, error: e2 }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, nome, celular, bairro, cidade, origem_cadastro, role, created_at")
+      .order("created_at", { ascending: false }),
+    supabase.from("pedidos").select("cliente_id, valor, status, created_at"),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+  type PerfilRow = {
+    id: string;
+    nome: string | null;
+    celular: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    origem_cadastro: string | null;
+    role: string | null;
+    created_at: string;
+  };
+  type PedLeve = { cliente_id: string | null; valor: number; status: string; created_at: string };
+  const pedidos = (peds ?? []) as PedLeve[];
+  return ((perfis ?? []) as PerfilRow[])
+    .filter((p) => (p.role ?? "cliente") === "cliente")
+    .map((p) => {
+      const meus = pedidos.filter((x) => x.cliente_id === p.id);
+      const validos = meus.filter((x) => x.status !== "cancelado");
+      const ultimo = meus.length
+        ? meus.reduce((a, b) => (a.created_at > b.created_at ? a : b)).created_at
+        : null;
+      return {
+        id: p.id,
+        nome: p.nome ?? "(sem nome)",
+        celular: p.celular ?? "",
+        bairro: p.bairro ?? "",
+        cidade: p.cidade ?? "",
+        origem: p.origem_cadastro ?? "—",
+        criadoEm: p.created_at,
+        pedidos: meus.length,
+        totalGasto: validos.reduce((s, x) => s + Number(x.valor), 0),
+        ultimoPedidoEm: ultimo,
+      };
+    });
+}
+
 type RepasseRow = {
   id: string;
   periodo_inicio: string;
@@ -297,7 +357,10 @@ export async function fetchReceitaSemanal(): Promise<SemanaReceita[]> {
 /* ---------- realtime ---------- */
 
 /** Assina mudanças em uma tabela e chama onChange (debounced pelo caller se preciso). */
-export function subscribe(tabela: "pedidos" | "costureiras" | "repasses", onChange: () => void) {
+export function subscribe(
+  tabela: "pedidos" | "costureiras" | "repasses" | "profiles",
+  onChange: () => void,
+) {
   const channel = supabase
     .channel(`admin-${tabela}-${Math.random().toString(36).slice(2, 8)}`)
     .on("postgres_changes", { event: "*", schema: "public", table: tabela }, onChange)

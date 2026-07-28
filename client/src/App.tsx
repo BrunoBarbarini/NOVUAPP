@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPedidos from "./pages/admin/AdminPedidos";
 import AdminAprovacoes from "./pages/admin/AdminAprovacoes";
 import AdminCostureiras from "./pages/admin/AdminCostureiras";
+import AdminClientes from "./pages/admin/AdminClientes";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
 
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/admin/pedidos"} component={AdminPedidos} />
       <Route path={"/admin/aprovacoes"} component={AdminAprovacoes} />
       <Route path={"/admin/costureiras"} component={AdminCostureiras} />
+      <Route path={"/admin/clientes"} component={AdminClientes} />
       <Route path={"/admin/financeiro"} component={AdminFinanceiro} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
