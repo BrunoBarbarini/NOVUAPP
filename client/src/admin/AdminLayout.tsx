@@ -17,6 +17,7 @@ import {
   LogOut,
   Scissors,
   Tag,
+  ShieldAlert,
   Menu,
   X,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/admin/costureiras", label: "Costureiras", icon: Users },
   { href: "/admin/clientes", label: "Clientes", icon: Contact },
   { href: "/admin/servicos", label: "Serviços", icon: Tag },
+  { href: "/admin/sinistros", label: "Proteção", icon: ShieldAlert },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
 ];
 

@@ -416,11 +416,105 @@ export async function excluirServicoDb(id: string) {
   if (error) throw error;
 }
 
+/* ---------- proteção contra dano à peça (sinistros) ---------- */
+
+export type SinistroStatus = "aberto" | "aprovado" | "recusado" | "reembolsado";
+
+export type SinistroAdmin = {
+  id: string;
+  pedidoId: string;
+  pedidoCodigo: string;
+  clienteNome: string;
+  descricao: string;
+  fotos: string[];
+  status: SinistroStatus;
+  valorReembolso: number | null;
+  respostaAdmin: string | null;
+  criadoEm: string;
+};
+
+type SinistroRow = {
+  id: string;
+  pedido_id: string;
+  descricao: string;
+  fotos: string[] | null;
+  status: SinistroStatus;
+  valor_reembolso: number | null;
+  resposta_admin: string | null;
+  created_at: string;
+  pedidos: { codigo: string; cliente_nome: string } | null;
+};
+
+const SINISTRO_SELECT =
+  "id, pedido_id, descricao, fotos, status, valor_reembolso, resposta_admin, created_at, pedidos ( codigo, cliente_nome )";
+
+function mapSinistro(r: SinistroRow): SinistroAdmin {
+  return {
+    id: r.id,
+    pedidoId: r.pedido_id,
+    pedidoCodigo: r.pedidos?.codigo ?? "—",
+    clienteNome: r.pedidos?.cliente_nome ?? "—",
+    descricao: r.descricao,
+    fotos: r.fotos ?? [],
+    status: r.status,
+    valorReembolso: r.valor_reembolso !== null ? Number(r.valor_reembolso) : null,
+    respostaAdmin: r.resposta_admin,
+    criadoEm: r.created_at,
+  };
+}
+
+export async function fetchSinistros(): Promise<SinistroAdmin[]> {
+  const { data, error } = await supabase
+    .from("pedido_sinistros")
+    .select(SINISTRO_SELECT)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const sinistros = (data as unknown as SinistroRow[]).map(mapSinistro);
+
+  // O bucket é privado — as fotos precisam de URL assinada pra aparecer no painel.
+  await Promise.all(
+    sinistros.map(async (s) => {
+      if (s.fotos.length === 0) return;
+      const { data: assinadas } = await supabase.storage
+        .from("novu-fotos-pecas")
+        .createSignedUrls(s.fotos, 3600);
+      s.fotos = (assinadas ?? []).map((a) => a.signedUrl).filter((u): u is string => Boolean(u));
+    }),
+  );
+  return sinistros;
+}
+
+/** Aprova o relato e registra o valor a ser reembolsado (o pagamento em si,
+ * fora do app, é marcado depois via marcarReembolsadoDb). */
+export async function decidirSinistroDb(
+  id: string,
+  decisao: { status: "aprovado" | "recusado"; valorReembolso?: number; respostaAdmin?: string },
+) {
+  const { error } = await supabase
+    .from("pedido_sinistros")
+    .update({
+      status: decisao.status,
+      valor_reembolso: decisao.valorReembolso ?? null,
+      resposta_admin: decisao.respostaAdmin ?? null,
+      decidido_em: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function marcarSinistroReembolsadoDb(id: string) {
+  const { error } = await supabase
+    .from("pedido_sinistros")
+    .update({ status: "reembolsado" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 /* ---------- realtime ---------- */
 
 /** Assina mudanças em uma tabela e chama onChange (debounced pelo caller se preciso). */
 export function subscribe(
-  tabela: "pedidos" | "costureiras" | "repasses" | "profiles" | "servicos",
+  tabela: "pedidos" | "costureiras" | "repasses" | "profiles" | "servicos" | "pedido_sinistros",
   onChange: () => void,
 ) {
   const channel = supabase
