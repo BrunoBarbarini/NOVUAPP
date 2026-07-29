@@ -16,6 +16,7 @@ import {
   Contact,
   LogOut,
   Scissors,
+  Tag,
   Menu,
   X,
 } from "lucide-react";
@@ -26,6 +27,7 @@ const NAV = [
   { href: "/admin/aprovacoes", label: "Aprovações", icon: UserCheck, badge: 0 },
   { href: "/admin/costureiras", label: "Costureiras", icon: Users },
   { href: "/admin/clientes", label: "Clientes", icon: Contact },
+  { href: "/admin/servicos", label: "Serviços", icon: Tag },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
 ];
 

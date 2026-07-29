@@ -12,6 +12,7 @@ import AdminAprovacoes from "./pages/admin/AdminAprovacoes";
 import AdminCostureiras from "./pages/admin/AdminCostureiras";
 import AdminClientes from "./pages/admin/AdminClientes";
 import AdminFinanceiro from "./pages/admin/AdminFinanceiro";
+import AdminServicos from "./pages/admin/AdminServicos";
 
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/admin/costureiras"} component={AdminCostureiras} />
       <Route path={"/admin/clientes"} component={AdminClientes} />
       <Route path={"/admin/financeiro"} component={AdminFinanceiro} />
+      <Route path={"/admin/servicos"} component={AdminServicos} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

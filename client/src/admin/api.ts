@@ -354,11 +354,73 @@ export async function fetchReceitaSemanal(): Promise<SemanaReceita[]> {
   return semanas;
 }
 
+/* ---------- catálogo de serviços ---------- */
+
+export type ServicoAdmin = {
+  id: string;
+  nome: string;
+  preco: number;
+  ordem: number;
+  ativo: boolean;
+  criadoEm: string;
+};
+
+type ServicoRow = {
+  id: string;
+  nome: string;
+  preco: number;
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+};
+
+const mapServico = (r: ServicoRow): ServicoAdmin => ({
+  id: r.id,
+  nome: r.nome,
+  preco: Number(r.preco),
+  ordem: r.ordem,
+  ativo: r.ativo,
+  criadoEm: r.created_at,
+});
+
+/** Catálogo completo (ativos e inativos) — é o admin que decide o que aparece
+ * pro cliente, então aqui mostramos tudo, ordenado como no app (`ordem`). */
+export async function fetchServicos(): Promise<ServicoAdmin[]> {
+  const { data, error } = await supabase
+    .from("servicos")
+    .select("id, nome, preco, ordem, ativo, created_at")
+    .order("ordem", { ascending: true });
+  if (error) throw error;
+  return (data as ServicoRow[]).map(mapServico);
+}
+
+export type ServicoInput = { nome: string; preco: number; ordem: number; ativo: boolean };
+
+export async function criarServicoDb(input: ServicoInput) {
+  const { error } = await supabase.from("servicos").insert(input);
+  if (error) throw error;
+}
+
+export async function atualizarServicoDb(id: string, input: ServicoInput) {
+  const { error } = await supabase.from("servicos").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function alternarServicoAtivoDb(id: string, ativo: boolean) {
+  const { error } = await supabase.from("servicos").update({ ativo }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function excluirServicoDb(id: string) {
+  const { error } = await supabase.from("servicos").delete().eq("id", id);
+  if (error) throw error;
+}
+
 /* ---------- realtime ---------- */
 
 /** Assina mudanças em uma tabela e chama onChange (debounced pelo caller se preciso). */
 export function subscribe(
-  tabela: "pedidos" | "costureiras" | "repasses" | "profiles",
+  tabela: "pedidos" | "costureiras" | "repasses" | "profiles" | "servicos",
   onChange: () => void,
 ) {
   const channel = supabase
