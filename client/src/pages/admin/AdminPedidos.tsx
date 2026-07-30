@@ -15,7 +15,7 @@ import {
   type Pedido,
   type StatusPedido,
 } from "@/admin/data";
-import { fetchPedidos, fetchCostureirasAtivas, atribuirCostureiraDb, subscribe } from "@/admin/api";
+import { fetchPedidos, fetchCostureirasAtivas, atribuirCostureiraDb, mudarStatusPedidoDb, subscribe } from "@/admin/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -109,6 +109,20 @@ export default function AdminPedidos() {
       toast.success(`Pedido ${codigo} enviado para ${c.nome}`);
     } catch {
       toast.error("Não foi possível atribuir. Tente novamente.");
+    }
+  };
+
+  const avancarEtapa = async (pedido: PedidoDb) => {
+    const atual = ETAPAS.indexOf(pedido.status);
+    const proxima = ETAPAS[atual + 1];
+    if (!proxima) return;
+    try {
+      await mudarStatusPedidoDb(pedido.id, proxima);
+      setLista((ls) => ls.map((p) => (p.id === pedido.id ? { ...p, status: proxima } : p)));
+      setSel((s) => (s && s.id === pedido.id ? { ...s, status: proxima } : s));
+      toast.success(`${pedido.codigo} agora está em "${STATUS_PEDIDO_LABEL[proxima]}"`);
+    } catch {
+      toast.error("Não foi possível avançar o status. Tente novamente.");
     }
   };
 
@@ -246,6 +260,15 @@ export default function AdminPedidos() {
                     Etapa atual: <strong className="text-ink">{STATUS_PEDIDO_LABEL[sel.status]}</strong> · prazo{" "}
                     {dataCurta(sel.prazo)}
                   </p>
+                </div>
+              )}
+
+              {/* Avançar etapa (novo -> aguardando_aceite é feito só ao atribuir costureira) */}
+              {sel.status !== "cancelado" && sel.status !== "novo" && sel.status !== "entregue" && (
+                <div className="mt-3">
+                  <Button className="w-full" onClick={() => avancarEtapa(sel)}>
+                    Avançar para "{STATUS_PEDIDO_LABEL[ETAPAS[ETAPAS.indexOf(sel.status) + 1]]}"
+                  </Button>
                 </div>
               )}
 
