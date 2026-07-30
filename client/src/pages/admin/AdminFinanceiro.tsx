@@ -10,6 +10,7 @@ import {
   fetchRepasses,
   fetchReceitaSemanal,
   marcarRepassePagoDb,
+  gerarRepassesSemana,
   subscribe,
   type SemanaReceita,
 } from "@/admin/api";
@@ -32,6 +33,7 @@ const REPASSE_TONE: Record<StatusRepasse, string> = {
 export default function AdminFinanceiro() {
   const [receitaSemanal, setReceita] = useState<SemanaReceita[]>([]);
   const [repasses, setRepasses] = useState<(Repasse & { dbId: string })[]>([]);
+  const [gerando, setGerando] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -60,6 +62,26 @@ export default function AdminFinanceiro() {
       toast.success(`Repasse de ${r.costureira} marcado como pago.`);
     } catch {
       toast.error("Não foi possível atualizar o repasse.");
+    }
+  };
+
+  const gerarRepasses = async () => {
+    setGerando(true);
+    try {
+      const resultado = await gerarRepassesSemana();
+      if (resultado.pedidos === 0) {
+        toast.info("Nenhum pedido entregue está aguardando repasse no momento.");
+      } else {
+        const reps = await fetchRepasses();
+        setRepasses(reps);
+        toast.success(
+          `${resultado.pedidos} pedido(s) de ${resultado.costureiras} costureira(s) viraram repasse "Agendado".`,
+        );
+      }
+    } catch {
+      toast.error("Não foi possível gerar os repasses agora.");
+    } finally {
+      setGerando(false);
     }
   };
 
@@ -108,8 +130,13 @@ export default function AdminFinanceiro() {
       </section>
 
       <section className="mt-8">
-        <SectionTitle>Repasses às costureiras</SectionTitle>
-        <div className="overflow-x-auto rounded-md border border-border bg-card">
+        <div className="flex items-center justify-between gap-4">
+          <SectionTitle>Repasses às costureiras</SectionTitle>
+          <Button size="sm" onClick={gerarRepasses} disabled={gerando} className="shrink-0">
+            {gerando ? "Gerando..." : "Gerar repasses da semana"}
+          </Button>
+        </div>
+        <div className="mt-3 overflow-x-auto rounded-md border border-border bg-card">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">

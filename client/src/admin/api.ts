@@ -4,7 +4,7 @@
  * para os tipos que as telas já consomem, então o visual não muda.
  */
 import { supabase } from "./supabase";
-import type { Pedido, StatusPedido, CadastroCostureira, CostureiraAtiva, Repasse } from "./data";
+import { TAXA_NOVU, type Pedido, type StatusPedido, type CadastroCostureira, type CostureiraAtiva, type Repasse } from "./data";
 
 export type SemanaReceita = { semana: string; bruto: number; novu: number };
 
@@ -307,6 +307,82 @@ export async function marcarRepassePagoDb(id: string) {
     .update({ status: "pago", data_pagamento: new Date().toISOString().slice(0, 10) })
     .eq("id", id);
   if (error) throw error;
+}
+
+type PedidoElegivelRow = {
+  id: string;
+  valor: number;
+  costureira_id: string;
+  updated_at: string;
+  pedido_extras: { valor: number; status: string }[] | null;
+};
+
+/**
+ * Junta pedidos `entregue` que ainda não entraram em nenhum repasse
+ * (`repasse_id is null`) e cria uma linha de repasse por costureira, com o
+ * valor líquido dela (70%, mesma fórmula de `fetchReceitaSemanal`). Marca os
+ * pedidos incluídos com o `id` do repasse gerado, pra não contar de novo numa
+ * próxima geração. Não paga nada sozinho — cria como "agendado"; o pagamento
+ * de fato (Pix) e o "Marcar pago" continuam manuais.
+ */
+export async function gerarRepassesSemana(): Promise<{ costureiras: number; pedidos: number }> {
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("id, valor, costureira_id, updated_at, pedido_extras ( valor, status )")
+    .eq("status", "entregue")
+    .is("repasse_id", null)
+    .not("costureira_id", "is", null);
+  if (error) throw error;
+
+  const pedidos = (data ?? []) as unknown as PedidoElegivelRow[];
+  if (pedidos.length === 0) return { costureiras: 0, pedidos: 0 };
+
+  const porCostureira = new Map<string, PedidoElegivelRow[]>();
+  for (const p of pedidos) {
+    const lista = porCostureira.get(p.costureira_id) ?? [];
+    lista.push(p);
+    porCostureira.set(p.costureira_id, lista);
+  }
+
+  for (const costureiraId of Array.from(porCostureira.keys())) {
+    const lista = porCostureira.get(costureiraId)!;
+    const bruto = lista.reduce(
+      (soma: number, p: PedidoElegivelRow) =>
+        soma +
+        Number(p.valor) +
+        (p.pedido_extras ?? [])
+          .filter((e) => e.status === "aprovado")
+          .reduce((se: number, e: { valor: number }) => se + Number(e.valor), 0),
+      0,
+    );
+    const valorCostureira = Math.round(bruto * (1 - TAXA_NOVU) * 100) / 100;
+    const datas = lista.map((p: PedidoElegivelRow) => p.updated_at.slice(0, 10)).sort();
+
+    const { data: repasse, error: erroInsert } = await supabase
+      .from("repasses")
+      .insert({
+        costureira_id: costureiraId,
+        periodo_inicio: datas[0],
+        periodo_fim: datas[datas.length - 1],
+        pedidos: lista.length,
+        valor: valorCostureira,
+        status: "agendado",
+      })
+      .select("id")
+      .single();
+    if (erroInsert) throw erroInsert;
+
+    const { error: erroUpdate } = await supabase
+      .from("pedidos")
+      .update({ repasse_id: (repasse as { id: string }).id })
+      .in(
+        "id",
+        lista.map((p: PedidoElegivelRow) => p.id),
+      );
+    if (erroUpdate) throw erroUpdate;
+  }
+
+  return { costureiras: porCostureira.size, pedidos: pedidos.length };
 }
 
 /** Receita das últimas 8 semanas calculada dos pedidos não-cancelados. */
