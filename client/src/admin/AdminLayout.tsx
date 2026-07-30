@@ -7,6 +7,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { supabase } from "./supabase";
+import wordmarkImg from "@/assets/novu-wordmark.png";
 import {
   LayoutDashboard,
   Package,
@@ -15,7 +16,6 @@ import {
   Wallet,
   Contact,
   LogOut,
-  Scissors,
   Tag,
   ShieldAlert,
   Menu,
@@ -127,14 +127,9 @@ export default function AdminLayout({
     <>
       <div className="px-6 pt-6 pb-5">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-needle text-primary-foreground">
-            <Scissors className="h-4.5 w-4.5" />
-          </span>
-          <span>
-            <span className="block font-display text-xl font-semibold tracking-tight text-ink">NOVU</span>
-            <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Ateliê central
-            </span>
+          <img src={wordmarkImg} alt="NOVU" className="h-7 w-auto object-contain" />
+          <span className="block font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Ateliê central
           </span>
         </Link>
       </div>
