@@ -16,7 +16,7 @@ export function Contact() {
               <em className="text-[oklch(0.78_0.14_45)]">Ou mãos que sabem cuidar?</em>
             </h2>
             <p className="text-[oklch(0.78_0.01_85)] leading-relaxed mt-6 text-lg max-w-2xl lg:mx-auto">
-              A NOVU está começando por São Paulo, de pontinho em pontinho.
+              A NOVU está começando por Americana, de pontinho em pontinho.
               Deixe seu contato e seja das primeiras pessoas a reparar com a
               gente — ou das primeiras costureiras da rede.
             </p>
@@ -55,7 +55,7 @@ export function Contact() {
           </div>
           <p className="text-xs leading-relaxed max-w-md">
             Roupas guardam memórias — a gente cuida delas. Dados sobre o ofício:
-            Aliança Empreendedora (2023) e IEMI. Piloto em São Paulo.
+            Aliança Empreendedora (2023) e IEMI. Piloto em Americana, SP.
           </p>
           <p className="text-xs font-mono-data">© 2026 NOVU · feito com carinho</p>
         </div>

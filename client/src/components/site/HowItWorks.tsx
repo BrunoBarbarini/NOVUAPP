@@ -67,7 +67,7 @@ export function HowItWorks() {
             <div className="bg-card border border-border rounded-[4px] overflow-hidden">
               <div className="px-6 py-4 border-b border-dashed border-border flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold">Cardápio de reparos</h3>
-                <span className="label-tag text-muted-foreground">São Paulo · piloto</span>
+                <span className="label-tag text-muted-foreground">Americana - SP · piloto</span>
               </div>
               <ul>
                 {PRICES.map((r, i) => (
@@ -104,7 +104,7 @@ export function HowItWorks() {
                 </button>
               </div>
               <p className="label-tag text-muted-foreground mt-4">
-                Piloto em São Paulo · Pinheiros, Jardins e região
+                Piloto em Americana, SP e região
               </p>
             </div>
           </Reveal>
