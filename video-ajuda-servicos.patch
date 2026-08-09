@@ -1,0 +1,307 @@
+diff --git a/client/src/admin/__tests__/api.test.ts b/client/src/admin/__tests__/api.test.ts
+index 7519757..62dbd6f 100644
+--- a/client/src/admin/__tests__/api.test.ts
++++ b/client/src/admin/__tests__/api.test.ts
+@@ -52,7 +52,7 @@ describe("aprovar cadastro de costureira", () => {
+ });
+ 
+ describe("catálogo de serviços (CRUD)", () => {
+-  it("cria um serviço novo", async () => {
++  it("cria um serviço novo, sem vídeo de ajuda (video_ajuda_url fica null)", async () => {
+     mockHandle.queueFromResult(ok(null));
+     await criarServicoDb({ nome: "Cerzido", preco: 35, ordem: 5, ativo: true });
+     expect(mockHandle.supabase.from).toHaveBeenCalledWith("servicos");
+@@ -61,9 +61,30 @@ describe("catálogo de serviços (CRUD)", () => {
+       preco: 35,
+       ordem: 5,
+       ativo: true,
++      video_ajuda_url: null,
+     });
+   });
+ 
++  it("cria um serviço com vídeo de ajuda (trim, string vazia vira null)", async () => {
++    mockHandle.queueFromResult(ok(null));
++    await criarServicoDb({
++      nome: "Ajuste de cintura",
++      preco: 50,
++      ordem: 3,
++      ativo: true,
++      videoAjudaUrl: "  https://x.test/marcacao-cintura.mp4  ",
++    });
++    expect(mockHandle.builders[0].insert).toHaveBeenCalledWith(
++      expect.objectContaining({ video_ajuda_url: "https://x.test/marcacao-cintura.mp4" }),
++    );
++
++    mockHandle.queueFromResult(ok(null));
++    await criarServicoDb({ nome: "Bainha", preco: 25, ordem: 1, ativo: true, videoAjudaUrl: "   " });
++    expect(mockHandle.builders[1].insert).toHaveBeenCalledWith(
++      expect.objectContaining({ video_ajuda_url: null }),
++    );
++  });
++
+   it("atualiza um serviço existente", async () => {
+     mockHandle.queueFromResult(ok(null));
+     await atualizarServicoDb("serv-1", { nome: "Bainha", preco: 25, ordem: 1, ativo: true });
+@@ -72,6 +93,7 @@ describe("catálogo de serviços (CRUD)", () => {
+       preco: 25,
+       ordem: 1,
+       ativo: true,
++      video_ajuda_url: null,
+     });
+     expect(mockHandle.builders[0].eq).toHaveBeenCalledWith("id", "serv-1");
+   });
+diff --git a/client/src/admin/api.ts b/client/src/admin/api.ts
+index a67384d..e2f78ef 100644
+--- a/client/src/admin/api.ts
++++ b/client/src/admin/api.ts
+@@ -439,6 +439,10 @@ export type ServicoAdmin = {
+   ordem: number;
+   ativo: boolean;
+   criadoEm: string;
++  /** URL pública de um vídeo curto ensinando a cliente a marcar/preparar a
++   * peça pra esse serviço antes de fotografar em T4 do app (ex.: pinçar a
++   * sobra na cintura). Nulo = nenhum vídeo, nenhuma dica aparece no app. */
++  videoAjudaUrl: string | null;
+ };
+ 
+ type ServicoRow = {
+@@ -448,6 +452,7 @@ type ServicoRow = {
+   ordem: number;
+   ativo: boolean;
+   created_at: string;
++  video_ajuda_url: string | null;
+ };
+ 
+ const mapServico = (r: ServicoRow): ServicoAdmin => ({
+@@ -457,6 +462,7 @@ const mapServico = (r: ServicoRow): ServicoAdmin => ({
+   ordem: r.ordem,
+   ativo: r.ativo,
+   criadoEm: r.created_at,
++  videoAjudaUrl: r.video_ajuda_url,
+ });
+ 
+ /** Catálogo completo (ativos e inativos) — é o admin que decide o que aparece
+@@ -464,21 +470,41 @@ const mapServico = (r: ServicoRow): ServicoAdmin => ({
+ export async function fetchServicos(): Promise<ServicoAdmin[]> {
+   const { data, error } = await supabase
+     .from("servicos")
+-    .select("id, nome, preco, ordem, ativo, created_at")
++    .select("id, nome, preco, ordem, ativo, created_at, video_ajuda_url")
+     .order("ordem", { ascending: true });
+   if (error) throw error;
+   return (data as ServicoRow[]).map(mapServico);
+ }
+ 
+-export type ServicoInput = { nome: string; preco: number; ordem: number; ativo: boolean };
++export type ServicoInput = {
++  nome: string;
++  preco: number;
++  ordem: number;
++  ativo: boolean;
++  /** String vazia (ou omitido) é gravada como null — sem vídeo de ajuda. */
++  videoAjudaUrl?: string | null;
++};
++
++function servicoInputToRow(input: ServicoInput) {
++  return {
++    nome: input.nome,
++    preco: input.preco,
++    ordem: input.ordem,
++    ativo: input.ativo,
++    video_ajuda_url: input.videoAjudaUrl?.trim() ? input.videoAjudaUrl.trim() : null,
++  };
++}
+ 
+ export async function criarServicoDb(input: ServicoInput) {
+-  const { error } = await supabase.from("servicos").insert(input);
++  const { error } = await supabase.from("servicos").insert(servicoInputToRow(input));
+   if (error) throw error;
+ }
+ 
+ export async function atualizarServicoDb(id: string, input: ServicoInput) {
+-  const { error } = await supabase.from("servicos").update(input).eq("id", id);
++  const { error } = await supabase
++    .from("servicos")
++    .update(servicoInputToRow(input))
++    .eq("id", id);
+   if (error) throw error;
+ }
+ 
+diff --git a/client/src/pages/admin/AdminServicos.tsx b/client/src/pages/admin/AdminServicos.tsx
+index d18ae5f..ad97c97 100644
+--- a/client/src/pages/admin/AdminServicos.tsx
++++ b/client/src/pages/admin/AdminServicos.tsx
+@@ -31,12 +31,18 @@ import {
+   DialogHeader,
+   DialogTitle,
+ } from "@/components/ui/dialog";
+-import { Pencil, Plus, Trash2 } from "lucide-react";
++import { Pencil, Plus, Trash2, Video } from "lucide-react";
+ import { toast } from "sonner";
+ 
+-type FormState = { nome: string; preco: string; ordem: string; ativo: boolean };
++type FormState = {
++  nome: string;
++  preco: string;
++  ordem: string;
++  ativo: boolean;
++  videoAjudaUrl: string;
++};
+ 
+-const FORM_VAZIO: FormState = { nome: "", preco: "", ordem: "0", ativo: true };
++const FORM_VAZIO: FormState = { nome: "", preco: "", ordem: "0", ativo: true, videoAjudaUrl: "" };
+ 
+ function parsePreco(v: string): number | null {
+   const limpo = v.trim().replace(/\./g, "").replace(",", ".");
+@@ -91,6 +97,7 @@ export default function AdminServicos() {
+       preco: String(s.preco).replace(".", ","),
+       ordem: String(s.ordem),
+       ativo: s.ativo,
++      videoAjudaUrl: s.videoAjudaUrl ?? "",
+     });
+     setDialogAberto(true);
+   }
+@@ -112,7 +119,13 @@ export default function AdminServicos() {
+       return;
+     }
+ 
+-    const input: ServicoInput = { nome, preco, ordem, ativo: form.ativo };
++    const input: ServicoInput = {
++      nome,
++      preco,
++      ordem,
++      ativo: form.ativo,
++      videoAjudaUrl: form.videoAjudaUrl,
++    };
+     setSalvando(true);
+     try {
+       if (editando) {
+@@ -213,7 +226,17 @@ export default function AdminServicos() {
+                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                       {s.ordem}
+                     </td>
+-                    <td className="px-4 py-3 font-medium">{s.nome}</td>
++                    <td className="px-4 py-3 font-medium">
++                      <span className="inline-flex items-center gap-1.5">
++                        {s.nome}
++                        {s.videoAjudaUrl ? (
++                          <Video
++                            className="h-3.5 w-3.5 text-needle"
++                            aria-label="Tem vídeo de ajuda de marcação"
++                          />
++                        ) : null}
++                      </span>
++                    </td>
+                     <td className="px-4 py-3 text-right font-mono">
+                       {brl(s.preco)}
+                     </td>
+@@ -329,6 +352,25 @@ export default function AdminServicos() {
+                 Visível pro cliente no app
+               </span>
+             </label>
++
++            <div className="grid gap-1.5">
++              <Label htmlFor="servico-video">Vídeo de ajuda (opcional)</Label>
++              <Input
++                id="servico-video"
++                value={form.videoAjudaUrl}
++                onChange={e =>
++                  setForm(f => ({ ...f, videoAjudaUrl: e.target.value }))
++                }
++                placeholder="https://.../marcacao-cintura.mp4"
++              />
++              <p className="text-xs text-muted-foreground">
++                Se esse serviço precisa que a cliente marque a peça antes de
++                fotografar (ex.: ajuste de cintura), cole aqui a URL de um
++                vídeo curto — o app mostra um botão "Não sabe marcar sua
++                peça?" em T4 pra quem escolheu esse serviço. Deixe em branco
++                pra não mostrar nenhuma dica.
++              </p>
++            </div>
+           </div>
+ 
+           <DialogFooter>
+diff --git a/client/src/pages/admin/__tests__/AdminServicos.test.tsx b/client/src/pages/admin/__tests__/AdminServicos.test.tsx
+index cd366fb..f1b3877 100644
+--- a/client/src/pages/admin/__tests__/AdminServicos.test.tsx
++++ b/client/src/pages/admin/__tests__/AdminServicos.test.tsx
+@@ -38,8 +38,24 @@ vi.mock("sonner", () => ({
+ }));
+ 
+ const servicos: ServicoAdmin[] = [
+-  { id: "s1", nome: "Bainha", preco: 25, ordem: 0, ativo: true, criadoEm: "2026-01-01" },
+-  { id: "s2", nome: "Zíper", preco: 35, ordem: 1, ativo: false, criadoEm: "2026-01-02" },
++  {
++    id: "s1",
++    nome: "Bainha",
++    preco: 25,
++    ordem: 0,
++    ativo: true,
++    criadoEm: "2026-01-01",
++    videoAjudaUrl: null,
++  },
++  {
++    id: "s2",
++    nome: "Ajuste de cintura",
++    preco: 50,
++    ordem: 1,
++    ativo: false,
++    criadoEm: "2026-01-02",
++    videoAjudaUrl: "https://x.test/marcacao-cintura.mp4",
++  },
+ ];
+ 
+ beforeEach(() => {
+@@ -61,7 +77,7 @@ describe("Admin Catálogo de serviços", () => {
+     mockFetchServicos.mockResolvedValue(servicos);
+     render(<AdminServicos />);
+     await waitFor(() => expect(screen.getByText("Bainha")).toBeTruthy());
+-    expect(screen.getByText("Zíper")).toBeTruthy();
++    expect(screen.getByText("Ajuste de cintura")).toBeTruthy();
+     expect(screen.getByText("Ativo")).toBeTruthy();
+     expect(screen.getByText("Pausado")).toBeTruthy();
+   });
+@@ -84,10 +100,43 @@ describe("Admin Catálogo de serviços", () => {
+         preco: 45,
+         ordem: 2,
+         ativo: true,
++        videoAjudaUrl: "",
+       }),
+     );
+   });
+ 
++  it("mostra o ícone de vídeo só nos serviços que têm video_ajuda_url", async () => {
++    mockFetchServicos.mockResolvedValue(servicos);
++    render(<AdminServicos />);
++    await waitFor(() => expect(screen.getByText("Ajuste de cintura")).toBeTruthy());
++
++    expect(screen.getByLabelText("Tem vídeo de ajuda de marcação")).toBeTruthy();
++  });
++
++  it("editar um serviço com vídeo pré-preenche o campo, e permite trocar a URL", async () => {
++    mockFetchServicos.mockResolvedValue(servicos);
++    mockAtualizarServicoDb.mockResolvedValue(undefined);
++    const user = userEvent.setup();
++    render(<AdminServicos />);
++    await waitFor(() => expect(screen.getByText("Ajuste de cintura")).toBeTruthy());
++
++    await user.click(screen.getAllByRole("button", { name: "Editar" })[1]);
++
++    const campoVideo = screen.getByLabelText("Vídeo de ajuda (opcional)") as HTMLInputElement;
++    expect(campoVideo.value).toBe("https://x.test/marcacao-cintura.mp4");
++
++    await user.clear(campoVideo);
++    await user.type(campoVideo, "https://x.test/nova-url.mp4");
++    await user.click(screen.getByRole("button", { name: "Salvar" }));
++
++    await waitFor(() =>
++      expect(mockAtualizarServicoDb).toHaveBeenCalledWith(
++        "s2",
++        expect.objectContaining({ videoAjudaUrl: "https://x.test/nova-url.mp4" }),
++      ),
++    );
++  });
++
+   it("valida preço inválido antes de salvar", async () => {
+     mockFetchServicos.mockResolvedValue(servicos);
+     const user = userEvent.setup();

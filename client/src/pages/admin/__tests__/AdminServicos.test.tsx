@@ -38,8 +38,24 @@ vi.mock("sonner", () => ({
 }));
 
 const servicos: ServicoAdmin[] = [
-  { id: "s1", nome: "Bainha", preco: 25, ordem: 0, ativo: true, criadoEm: "2026-01-01" },
-  { id: "s2", nome: "Zíper", preco: 35, ordem: 1, ativo: false, criadoEm: "2026-01-02" },
+  {
+    id: "s1",
+    nome: "Bainha",
+    preco: 25,
+    ordem: 0,
+    ativo: true,
+    criadoEm: "2026-01-01",
+    videoAjudaUrl: null,
+  },
+  {
+    id: "s2",
+    nome: "Ajuste de cintura",
+    preco: 50,
+    ordem: 1,
+    ativo: false,
+    criadoEm: "2026-01-02",
+    videoAjudaUrl: "https://x.test/marcacao-cintura.mp4",
+  },
 ];
 
 beforeEach(() => {
@@ -61,7 +77,7 @@ describe("Admin Catálogo de serviços", () => {
     mockFetchServicos.mockResolvedValue(servicos);
     render(<AdminServicos />);
     await waitFor(() => expect(screen.getByText("Bainha")).toBeTruthy());
-    expect(screen.getByText("Zíper")).toBeTruthy();
+    expect(screen.getByText("Ajuste de cintura")).toBeTruthy();
     expect(screen.getByText("Ativo")).toBeTruthy();
     expect(screen.getByText("Pausado")).toBeTruthy();
   });
@@ -84,7 +100,40 @@ describe("Admin Catálogo de serviços", () => {
         preco: 45,
         ordem: 2,
         ativo: true,
+        videoAjudaUrl: "",
       }),
+    );
+  });
+
+  it("mostra o ícone de vídeo só nos serviços que têm video_ajuda_url", async () => {
+    mockFetchServicos.mockResolvedValue(servicos);
+    render(<AdminServicos />);
+    await waitFor(() => expect(screen.getByText("Ajuste de cintura")).toBeTruthy());
+
+    expect(screen.getByLabelText("Tem vídeo de ajuda de marcação")).toBeTruthy();
+  });
+
+  it("editar um serviço com vídeo pré-preenche o campo, e permite trocar a URL", async () => {
+    mockFetchServicos.mockResolvedValue(servicos);
+    mockAtualizarServicoDb.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<AdminServicos />);
+    await waitFor(() => expect(screen.getByText("Ajuste de cintura")).toBeTruthy());
+
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[1]);
+
+    const campoVideo = screen.getByLabelText("Vídeo de ajuda (opcional)") as HTMLInputElement;
+    expect(campoVideo.value).toBe("https://x.test/marcacao-cintura.mp4");
+
+    await user.clear(campoVideo);
+    await user.type(campoVideo, "https://x.test/nova-url.mp4");
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() =>
+      expect(mockAtualizarServicoDb).toHaveBeenCalledWith(
+        "s2",
+        expect.objectContaining({ videoAjudaUrl: "https://x.test/nova-url.mp4" }),
+      ),
     );
   });
 

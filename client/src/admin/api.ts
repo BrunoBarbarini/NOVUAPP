@@ -439,6 +439,10 @@ export type ServicoAdmin = {
   ordem: number;
   ativo: boolean;
   criadoEm: string;
+  /** URL pública de um vídeo curto ensinando a cliente a marcar/preparar a
+   * peça pra esse serviço antes de fotografar em T4 do app (ex.: pinçar a
+   * sobra na cintura). Nulo = nenhum vídeo, nenhuma dica aparece no app. */
+  videoAjudaUrl: string | null;
 };
 
 type ServicoRow = {
@@ -448,6 +452,7 @@ type ServicoRow = {
   ordem: number;
   ativo: boolean;
   created_at: string;
+  video_ajuda_url: string | null;
 };
 
 const mapServico = (r: ServicoRow): ServicoAdmin => ({
@@ -457,6 +462,7 @@ const mapServico = (r: ServicoRow): ServicoAdmin => ({
   ordem: r.ordem,
   ativo: r.ativo,
   criadoEm: r.created_at,
+  videoAjudaUrl: r.video_ajuda_url,
 });
 
 /** Catálogo completo (ativos e inativos) — é o admin que decide o que aparece
@@ -464,21 +470,41 @@ const mapServico = (r: ServicoRow): ServicoAdmin => ({
 export async function fetchServicos(): Promise<ServicoAdmin[]> {
   const { data, error } = await supabase
     .from("servicos")
-    .select("id, nome, preco, ordem, ativo, created_at")
+    .select("id, nome, preco, ordem, ativo, created_at, video_ajuda_url")
     .order("ordem", { ascending: true });
   if (error) throw error;
   return (data as ServicoRow[]).map(mapServico);
 }
 
-export type ServicoInput = { nome: string; preco: number; ordem: number; ativo: boolean };
+export type ServicoInput = {
+  nome: string;
+  preco: number;
+  ordem: number;
+  ativo: boolean;
+  /** String vazia (ou omitido) é gravada como null — sem vídeo de ajuda. */
+  videoAjudaUrl?: string | null;
+};
+
+function servicoInputToRow(input: ServicoInput) {
+  return {
+    nome: input.nome,
+    preco: input.preco,
+    ordem: input.ordem,
+    ativo: input.ativo,
+    video_ajuda_url: input.videoAjudaUrl?.trim() ? input.videoAjudaUrl.trim() : null,
+  };
+}
 
 export async function criarServicoDb(input: ServicoInput) {
-  const { error } = await supabase.from("servicos").insert(input);
+  const { error } = await supabase.from("servicos").insert(servicoInputToRow(input));
   if (error) throw error;
 }
 
 export async function atualizarServicoDb(id: string, input: ServicoInput) {
-  const { error } = await supabase.from("servicos").update(input).eq("id", id);
+  const { error } = await supabase
+    .from("servicos")
+    .update(servicoInputToRow(input))
+    .eq("id", id);
   if (error) throw error;
 }
 

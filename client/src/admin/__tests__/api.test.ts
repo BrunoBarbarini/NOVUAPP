@@ -52,7 +52,7 @@ describe("aprovar cadastro de costureira", () => {
 });
 
 describe("catálogo de serviços (CRUD)", () => {
-  it("cria um serviço novo", async () => {
+  it("cria um serviço novo, sem vídeo de ajuda (video_ajuda_url fica null)", async () => {
     mockHandle.queueFromResult(ok(null));
     await criarServicoDb({ nome: "Cerzido", preco: 35, ordem: 5, ativo: true });
     expect(mockHandle.supabase.from).toHaveBeenCalledWith("servicos");
@@ -61,7 +61,28 @@ describe("catálogo de serviços (CRUD)", () => {
       preco: 35,
       ordem: 5,
       ativo: true,
+      video_ajuda_url: null,
     });
+  });
+
+  it("cria um serviço com vídeo de ajuda (trim, string vazia vira null)", async () => {
+    mockHandle.queueFromResult(ok(null));
+    await criarServicoDb({
+      nome: "Ajuste de cintura",
+      preco: 50,
+      ordem: 3,
+      ativo: true,
+      videoAjudaUrl: "  https://x.test/marcacao-cintura.mp4  ",
+    });
+    expect(mockHandle.builders[0].insert).toHaveBeenCalledWith(
+      expect.objectContaining({ video_ajuda_url: "https://x.test/marcacao-cintura.mp4" }),
+    );
+
+    mockHandle.queueFromResult(ok(null));
+    await criarServicoDb({ nome: "Bainha", preco: 25, ordem: 1, ativo: true, videoAjudaUrl: "   " });
+    expect(mockHandle.builders[1].insert).toHaveBeenCalledWith(
+      expect.objectContaining({ video_ajuda_url: null }),
+    );
   });
 
   it("atualiza um serviço existente", async () => {
@@ -72,6 +93,7 @@ describe("catálogo de serviços (CRUD)", () => {
       preco: 25,
       ordem: 1,
       ativo: true,
+      video_ajuda_url: null,
     });
     expect(mockHandle.builders[0].eq).toHaveBeenCalledWith("id", "serv-1");
   });

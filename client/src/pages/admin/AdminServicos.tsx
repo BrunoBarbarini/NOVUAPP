@@ -31,12 +31,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 
-type FormState = { nome: string; preco: string; ordem: string; ativo: boolean };
+type FormState = {
+  nome: string;
+  preco: string;
+  ordem: string;
+  ativo: boolean;
+  videoAjudaUrl: string;
+};
 
-const FORM_VAZIO: FormState = { nome: "", preco: "", ordem: "0", ativo: true };
+const FORM_VAZIO: FormState = { nome: "", preco: "", ordem: "0", ativo: true, videoAjudaUrl: "" };
 
 function parsePreco(v: string): number | null {
   const limpo = v.trim().replace(/\./g, "").replace(",", ".");
@@ -91,6 +97,7 @@ export default function AdminServicos() {
       preco: String(s.preco).replace(".", ","),
       ordem: String(s.ordem),
       ativo: s.ativo,
+      videoAjudaUrl: s.videoAjudaUrl ?? "",
     });
     setDialogAberto(true);
   }
@@ -112,7 +119,13 @@ export default function AdminServicos() {
       return;
     }
 
-    const input: ServicoInput = { nome, preco, ordem, ativo: form.ativo };
+    const input: ServicoInput = {
+      nome,
+      preco,
+      ordem,
+      ativo: form.ativo,
+      videoAjudaUrl: form.videoAjudaUrl,
+    };
     setSalvando(true);
     try {
       if (editando) {
@@ -213,7 +226,17 @@ export default function AdminServicos() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {s.ordem}
                     </td>
-                    <td className="px-4 py-3 font-medium">{s.nome}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <span className="inline-flex items-center gap-1.5">
+                        {s.nome}
+                        {s.videoAjudaUrl ? (
+                          <Video
+                            className="h-3.5 w-3.5 text-needle"
+                            aria-label="Tem vídeo de ajuda de marcação"
+                          />
+                        ) : null}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right font-mono">
                       {brl(s.preco)}
                     </td>
@@ -329,6 +352,25 @@ export default function AdminServicos() {
                 Visível pro cliente no app
               </span>
             </label>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor="servico-video">Vídeo de ajuda (opcional)</Label>
+              <Input
+                id="servico-video"
+                value={form.videoAjudaUrl}
+                onChange={e =>
+                  setForm(f => ({ ...f, videoAjudaUrl: e.target.value }))
+                }
+                placeholder="https://.../marcacao-cintura.mp4"
+              />
+              <p className="text-xs text-muted-foreground">
+                Se esse serviço precisa que a cliente marque a peça antes de
+                fotografar (ex.: ajuste de cintura), cole aqui a URL de um
+                vídeo curto — o app mostra um botão "Não sabe marcar sua
+                peça?" em T4 pra quem escolheu esse serviço. Deixe em branco
+                pra não mostrar nenhuma dica.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
