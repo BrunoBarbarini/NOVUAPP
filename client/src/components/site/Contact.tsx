@@ -3,6 +3,7 @@ import logoImg from "@/assets/novu-logo.webp";
    footer costurado com aviso de piloto. */
 import { Reveal } from "./primitives";
 import { toast } from "sonner";
+import { LAUNCH_MESSAGE_CLIENTE, LAUNCH_MESSAGE_COSTUREIRA } from "@/lib/launchCopy";
 
 export function Contact() {
   return (
@@ -24,13 +25,13 @@ export function Contact() {
           <Reveal delay={120}>
             <div className="mt-10 flex flex-wrap lg:justify-center gap-4">
               <button
-                onClick={() => toast.info("Lista de espera abrindo em breve! Enquanto isso, escreva para ola@novu.com.br.")}
+                onClick={() => toast.info(LAUNCH_MESSAGE_CLIENTE)}
                 className="inline-flex items-center gap-2 bg-thread text-white font-semibold px-7 py-4 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
               >
                 Quero reparar uma peça
               </button>
               <button
-                onClick={() => toast.info("Cadastro da rede de costureiras abrindo em breve! Escreva para ola@novu.com.br.")}
+                onClick={() => toast.info(LAUNCH_MESSAGE_COSTUREIRA)}
                 className="inline-flex items-center gap-2 font-semibold px-7 py-4 rounded-[3px] border-[1.5px] border-dashed border-[oklch(0.72_0.1_150)] text-[oklch(0.88_0.05_150)] hover:bg-white/5 transition-colors duration-150 active:scale-[0.97]"
               >
                 Sou costureira

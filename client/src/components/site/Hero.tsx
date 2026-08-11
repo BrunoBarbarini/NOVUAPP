@@ -2,6 +2,8 @@
    destaque, manchete afetiva com itálico Fraunces, linha de alinhavo animada. */
 import { useEffect, useRef, useState } from "react";
 import { Reveal, SwingTag } from "./primitives";
+import { toast } from "sonner";
+import { LAUNCH_MESSAGE_CLIENTE, LAUNCH_MESSAGE_COSTUREIRA } from "@/lib/launchCopy";
 
 // URL CDN pública e permanente — funciona em qualquer hospedagem
 // (Vercel/novuapp.com.br e Manus/manus.space).
@@ -138,12 +140,14 @@ export function Hero() {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <a
                 href="#reparar"
+                onClick={() => toast.info(LAUNCH_MESSAGE_CLIENTE)}
                 className="inline-flex items-center gap-2 bg-needle text-primary-foreground font-semibold px-6 py-3.5 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:bg-needle-deep"
               >
                 Quero reparar uma peça
               </a>
               <a
                 href="#costureiras"
+                onClick={() => toast.info(LAUNCH_MESSAGE_COSTUREIRA)}
                 className="inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-[3px] baste-border text-needle hover:bg-accent transition-colors duration-150 active:scale-[0.97]"
               >
                 Sou costureira, quero costurar com a NOVU

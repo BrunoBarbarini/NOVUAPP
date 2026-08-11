@@ -2,6 +2,7 @@
    carinho + cardápio de reparos com preços acessíveis. */
 import { ChapterHeader, Reveal } from "./primitives";
 import { toast } from "sonner";
+import { LAUNCH_MESSAGE_CLIENTE } from "@/lib/launchCopy";
 
 const STEPS = [
   {
@@ -95,9 +96,7 @@ export function HowItWorks() {
               </p>
               <div className="mt-7 flex flex-wrap gap-4">
                 <button
-                  onClick={() =>
-                    toast.info("Estamos alinhavando os últimos pontos! Deixe seu e-mail no rodapé para ser avisada(o) do lançamento.")
-                  }
+                  onClick={() => toast.info(LAUNCH_MESSAGE_CLIENTE)}
                   className="inline-flex items-center gap-2 bg-needle text-primary-foreground font-semibold px-6 py-3.5 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:bg-needle-deep"
                 >
                   Agendar meu primeiro reparo

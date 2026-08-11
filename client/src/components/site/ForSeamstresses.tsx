@@ -3,6 +3,7 @@ import costureiraImg from "@/assets/novu-costureira.webp";
    comunidade e fila organizada de clientes. */
 import { ChapterHeader, Reveal } from "./primitives";
 import { toast } from "sonner";
+import { LAUNCH_MESSAGE_COSTUREIRA } from "@/lib/launchCopy";
 
 const PROMESSAS = [
   {
@@ -69,9 +70,7 @@ export function ForSeamstresses() {
           </div>
           <Reveal delay={280}>
             <button
-              onClick={() =>
-                toast.info("As inscrições para a rede NOVU abrem em breve. Deixe seu contato no rodapé que a gente te chama!")
-              }
+              onClick={() => toast.info(LAUNCH_MESSAGE_COSTUREIRA)}
               className="mt-9 inline-flex items-center gap-2 bg-thread text-white font-semibold px-6 py-3.5 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
             >
               Quero fazer parte da rede

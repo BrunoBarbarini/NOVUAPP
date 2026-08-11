@@ -2,6 +2,8 @@ import wordmarkImg from "@/assets/novu-wordmark.png";
 /* NOVU — Casa de Vó Editorial: nav fina, wordmark Fraunces, CTA duplo afetivo */
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { LAUNCH_MESSAGE_CLIENTE, LAUNCH_MESSAGE_COSTUREIRA } from "@/lib/launchCopy";
 
 const LINKS = [
   { href: "#manifesto", label: "Nosso manifesto" },
@@ -50,12 +52,14 @@ export function Nav() {
         <div className="flex items-center gap-3">
           <a
             href="#costureiras"
+            onClick={() => toast.info(LAUNCH_MESSAGE_COSTUREIRA)}
             className="hidden sm:inline-flex items-center text-sm font-semibold text-needle link-baste"
           >
             Sou costureira
           </a>
           <a
             href="#reparar"
+            onClick={() => toast.info(LAUNCH_MESSAGE_CLIENTE)}
             className="inline-flex items-center gap-2 bg-thread text-white text-sm font-semibold px-4 py-2 rounded-[3px] transition-transform duration-150 active:scale-[0.97] hover:brightness-95"
           >
             Quero reparar uma peça
