@@ -4,14 +4,19 @@ Site institucional da NOVU: plataforma de reparo de roupas de porta em porta, co
 
 ## Stack
 
-React 19 + Vite 7 + Tailwind CSS 4 + shadcn/ui. Site 100% estático (SPA) — não requer backend.
+React 19 + Vite 7 + Tailwind CSS 4 + shadcn/ui. SPA com painel administrativo conectado ao projeto Supabase dedicado da NOVU.
 
 ## Desenvolvimento local
 
 ```bash
 pnpm install   # ou npm install / yarn (o .npmrc já cobre peer deps antigas)
+cp .env.example .env  # preencha a chave pública do projeto dedicado NOVU
 pnpm dev       # dev server em http://localhost:3000
 ```
+
+URL e chave são obrigatórias; não há fallback no painel. Veja
+[configuração e auditoria Supabase](docs/supabase-config.md) antes de rodar ou
+gerar um build. As variáveis VITE_* precisam estar disponíveis no momento do build.
 
 ## Build de produção (qualquer host estático)
 
@@ -41,3 +46,4 @@ client/
     pages/Home.tsx    ← composição da página única
 server/               ← servidor Express opcional (apenas para `build:full`)
 ```
+

@@ -5,18 +5,19 @@
  * (apenas usuários com role=admin enxergam pedidos, repasses e a fila).
  */
 import { createClient } from "@supabase/supabase-js";
+import { validateSupabaseConfig } from "./supabaseConfig";
 
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
-  "https://aioooyvzggpuaktczqpq.supabase.co";
-const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpb29veXZ6Z2dwdWFrdGN6cXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxMTU4MDEsImV4cCI6MjEwNTY5MTgwMX0.6lrPLjgoh5E8i2YxXnMaa_FlQRlnwBo_PF28_y2Vlus";
+const { url, anonKey } = validateSupabaseConfig(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  { url: "VITE_SUPABASE_URL", key: "VITE_SUPABASE_ANON_KEY" },
+);
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     storageKey: "novu_admin_auth",
   },
 });
+
